@@ -112,7 +112,7 @@ body{background:#000;overflow:hidden;font-family:'Courier New',monospace;}
 #chat-input-wrap{display:none;pointer-events:all;margin-top:4px;}
 #chat-input{width:100%;background:rgba(0,0,0,0.85);border:2px solid #7af;color:#fff;padding:5px 8px;font-family:'Courier New',monospace;font-size:12px;border-radius:4px;outline:none;}
 /* Name tags (in-game) */
-.nametag{position:absolute;background:rgba(0,0,0,0.6);color:#fff;font-size:11px;padding:2px 6px;border-radius:3px;pointer-events:none;transform:translateX(-50%);white-space:nowrap;font-family:'Courier New',monospace;}
+.nametag{position:absolute;background:rgba(0,0,0,0.6);color:#fff;font-size:11px;padding:2px 6px;border-radius:3px;pointer-events:none;transform:translateX(-50%);white-space:nowrap;font-family:'Courier New',monospace;z-index:20;}
 /* Countdown overlay */
 #countdown-overlay{position:fixed;top:0;left:0;width:100%;height:100%;display:none;align-items:center;justify-content:center;z-index:200;background:rgba(0,0,0,0.5);}
 #countdown-overlay.active{display:flex;}
@@ -179,6 +179,20 @@ body{background:#000;overflow:hidden;font-family:'Courier New',monospace;}
   </div>
   <div style="margin-top:24px;color:#bbb;font-size:11px;text-align:center;line-height:2;text-shadow:1px 1px 1px #000;">
     WASD — Move &nbsp;|&nbsp; Mouse — Look &nbsp;|&nbsp; E — Inventory &nbsp;|&nbsp; M — Map &nbsp;|&nbsp; T — Chat
+  </div>
+</div>
+
+<!-- ══ HOST SCREEN ══ -->
+<!-- ══ GAME MODE SELECT ══ -->
+<div id="mode-screen" class="screen">
+  <h1>🎮 Select Game Mode</h1>
+  <div class="panel" style="text-align:center;">
+    <button class="mbtn green" id="mode-creative-btn" style="width:100%;padding:18px;font-size:15px;">
+      ⛏ Creative Mode
+      <div style="font-size:10px;opacity:0.85;font-weight:normal;margin-top:4px;">Unlimited blocks, fly free, build anything</div>
+    </button>
+    <div style="margin-top:14px;color:#777;font-size:10px;">More modes coming soon!</div>
+    <button class="mbtn" id="mode-back" style="width:100%;margin-top:14px;background:#333;border-color:#555;color:#aaa;padding:10px;">← Back</button>
   </div>
 </div>
 
@@ -2836,9 +2850,25 @@ wCanvas.width=window.innerWidth;wCanvas.height=window.innerHeight;
 const wCtx=wCanvas.getContext('2d');
 const WEATHER={CLEAR:0,RAIN:1,THUNDER:2,SNOW_WEATHER:3};
 let currentWeather=WEATHER.CLEAR;
-// Start with a long clear period (120-300 seconds before first weather check)
-let weatherTimer=180+Math.random()*120;
-let weatherDuration=0;// how long current non-clear weather lasts
+// Shared with the day/night cycle below — set from the server's 'gameStart' epoch so every
+// player's weather and time of day are perfectly in sync, not independently randomized.
+let roomEpochMs=null,mpSeed=1;
+function mpHash01(a,b){
+  let h=Math.imul(a^b,2246822519);
+  h=Math.imul(h^(h>>>15),2246822519);
+  h=Math.imul(h^(h>>>13),3266489917);
+  h^=h>>>16;
+  return (h>>>0)/4294967296;
+}
+const WEATHER_BUCKET_SEC=150;// weather can change roughly every 2.5 min of game time, same for everyone
+function weatherForElapsed(elapsedSec){
+  const bucket=Math.floor(elapsedSec/WEATHER_BUCKET_SEC);
+  const r=mpHash01(mpSeed,bucket*2654435761);
+  if(r<0.08)return WEATHER.THUNDER;
+  if(r<0.22)return WEATHER.SNOW_WEATHER;
+  if(r<0.50)return WEATHER.RAIN;
+  return WEATHER.CLEAR;
+}
 let thunderTimer=0,lightningFlash=0;
 const rainDrops=[];
 const snowFlakes=[];
@@ -2846,21 +2876,8 @@ for(let i=0;i<600;i++)rainDrops.push({x:Math.random()*window.innerWidth,y:Math.r
 for(let i=0;i<300;i++)snowFlakes.push({x:Math.random()*window.innerWidth,y:Math.random()*window.innerHeight,spd:0.5+Math.random()*1.5,size:2+Math.random()*3,drift:Math.random()*0.5-0.25});
 
 function updateWeather(dt){
-  weatherTimer-=dt;
-  if(weatherTimer<=0){
-    if(currentWeather===WEATHER.CLEAR){
-      // Currently clear — small chance (15%) of weather starting
-      const r=Math.random();
-      if(r<0.08){currentWeather=WEATHER.THUNDER;weatherTimer=20+Math.random()*30;}// thunder: rare, 8% chance, lasts 20-50s
-      else if(r<0.22){currentWeather=WEATHER.SNOW_WEATHER;weatherTimer=40+Math.random()*60;}// snow: 14% chance
-      else if(r<0.50){currentWeather=WEATHER.RAIN;weatherTimer=30+Math.random()*80;}// rain: 28% chance
-      else{weatherTimer=120+Math.random()*180;}// stays clear: 50% chance, wait 2-5 min before next check
-    } else {
-      // Currently has weather — return to clear for a long time
-      currentWeather=WEATHER.CLEAR;
-      weatherTimer=120+Math.random()*240;// clear for 2-6 minutes
-    }
-  }
+  const elapsedSec=roomEpochMs?(Date.now()-roomEpochMs)/1000:0;
+  currentWeather=weatherForElapsed(elapsedSec);
   if(currentWeather===WEATHER.THUNDER){
     thunderTimer-=dt;
     if(thunderTimer<=0){thunderTimer=5+Math.random()*12;lightningFlash=0.15;}
@@ -3145,7 +3162,11 @@ let timeOfDay=0.35;
 const DAYSPD=0.0012;// faster day/night cycle (was 0.00055)
 const SKYCOLS={night:new THREE.Color(0x05081f),dawn:new THREE.Color(0xff7733),day:new THREE.Color(0x87ceeb),dusk:new THREE.Color(0xff5511)};
 function updateDayNight(dt){
-  timeOfDay=(timeOfDay+DAYSPD*dt)%1;
+  // Pure function of real elapsed time since the shared room epoch — every player computes
+  // the exact same value with zero drift, instead of each client accumulating dt independently
+  // (which used to let dusk/night happen at different times for different players).
+  const elapsedSec=roomEpochMs?(Date.now()-roomEpochMs)/1000:0;
+  timeOfDay=(0.35+elapsedSec*DAYSPD)%1;
   isDay=timeOfDay>0.25&&timeOfDay<0.78;
   let sc,si,ai,nightOverlay=0;
   if(timeOfDay<0.22){
@@ -3286,9 +3307,10 @@ function renderInv(q){
 // ══════════════════════════════════════════════════
 const mmCanvas=document.getElementById('mmcanvas');
 const mmCtx=mmCanvas.getContext('2d');
-const MM_SIZE=100,MM_RANGE=60;// 60 world blocks shown on 100px canvas
+const MM_SIZE=100,MM_RANGE=100;// 100 world blocks shown on 100px canvas (was 60 — shows more of the actual map)
 let mmExpanded=false;
-const BIOME_COLS=['#8db360','#5a7a2a','#e8cc88','#eef5ff','#3aaa3a','#cc7733','#9966ff','#888','#2a5a2a','#882222','#b09050'];
+// More saturated/distinct per-biome colors so the map reads clearly at a glance
+const BIOME_COLS=['#7fc24a','#3f6e1a','#f2d98a','#e8f6ff','#1fae3a','#d9791f','#a855f7','#9aa0a6','#1f4d1f','#b3281e','#c9955a'];
 document.getElementById('minimap').addEventListener('click',()=>{});// click disabled — use M key
 
 let mmTimer=0;
@@ -3298,7 +3320,7 @@ function updateMinimap(dt){
   mmTimer=0;
   const px2=Math.floor(player.pos.x),pz2=Math.floor(player.pos.z);
   const sz=mmExpanded?200:MM_SIZE;
-  const range=mmExpanded?120:MM_RANGE;
+  const range=mmExpanded?170:MM_RANGE;
   mmCanvas.width=sz;mmCanvas.height=sz;
   if(mmExpanded){mmCanvas.style.width='200px';mmCanvas.style.height='200px';}
   else{mmCanvas.style.width='100px';mmCanvas.style.height='100px';}
@@ -3308,7 +3330,7 @@ function updateMinimap(dt){
     const surf=world.getSurface(wx,wz);
     const bio=world.biomeAt(wx,wz);
     let col=BIOME_COLS[bio]||'#5a7a2a';
-    if(surf<=SL+1)col='#3f76e4';// water
+    if(surf<=SL+1)col='#2f7fe4';// water
     // Shade by height
     const bright=Math.max(0.5,Math.min(1.3,(surf-SL)/18+0.9));
     mmCtx.fillStyle=col;
@@ -3336,6 +3358,16 @@ function updateMinimap(dt){
     const mx2=cx2+Math.floor((m.mesh.position.x-px2)/range*sz);
     const mz2=cz2+Math.floor((m.mesh.position.z-pz2)/range*sz);
     if(mx2>=0&&mx2<sz&&mz2>=0&&mz2<sz){mmCtx.fillStyle=m.type.hostile?'#ff4444':'#ffaa44';mmCtx.fillRect(mx2-1,mz2-1,2,2);}
+  });
+  // Other players — bright cyan dots with a small ring so they stand out from mobs/villagers
+  Object.values(remotePlayers).forEach(rp=>{
+    const rx=cx2+Math.floor((rp.pos.x-px2)/range*sz);
+    const rz=cz2+Math.floor((rp.pos.z-pz2)/range*sz);
+    if(rx>=0&&rx<sz&&rz>=0&&rz<sz){
+      mmCtx.fillStyle='#00eaff';
+      mmCtx.beginPath();mmCtx.arc(rx,rz,2.2,0,Math.PI*2);mmCtx.fill();
+      mmCtx.strokeStyle='#003844';mmCtx.lineWidth=0.6;mmCtx.stroke();
+    }
   });
 }
 
@@ -3447,7 +3479,7 @@ function loop(t){
 // Put your own Render server URL here after you deploy it (Step 3 of the setup guide).
 // It will look like: https://block-world-server-xxxx.onrender.com
 // Do NOT put a trailing slash "/" at the end.
-const SERVER_URL = 'https://block-world-server.onrender.com';
+const SERVER_URL = 'https://PASTE-YOUR-RENDER-URL-HERE.onrender.com';
 let socket = null;
 let myId = null;
 let myRoomCode = null;
@@ -3490,7 +3522,7 @@ function connectSocket() {
     // Apply any block changes that happened before we joined
     if (blockChanges && blockChanges.length) {
       blockChanges.forEach(({ x, y, z, blockId }) => {
-        world.setBlock(x, y, z, blockId);
+        _origSetBlock(x, y, z, blockId);
       });
     }
     // Show chat history
@@ -3530,11 +3562,12 @@ function connectSocket() {
     num.style.animation = '';
   });
 
-  socket.on('gameStart', ({ players, seed }) => {
+  socket.on('gameStart', ({ players, seed, epochMs }) => {
     setTimeout(() => {
       document.getElementById('countdown-overlay').classList.remove('active');
       showScreen(null);
-      if (typeof seed === 'number') world.setSeed(seed); // same seed for everyone = same world
+      if (typeof seed === 'number') { world.setSeed(seed); mpSeed = seed; } // same seed for everyone = same world
+      roomEpochMs = typeof epochMs === 'number' ? epochMs : Date.now(); // same clock for everyone = same time-of-day & weather
       launchWorldLoad();
       // Build remote player meshes for everyone except ourselves
       if (players) {
@@ -3561,7 +3594,11 @@ function connectSocket() {
   });
 
   socket.on('blockChanged', ({ x, y, z, blockId }) => {
-    world.setBlock(x, y, z, blockId);
+    // IMPORTANT: use the raw setter, not world.setBlock — the overridden version
+    // re-broadcasts every call, and calling it here would echo this edit back out
+    // to the room, which every other client would also do, causing a runaway
+    // feedback loop (this was the "block glitch" bug).
+    _origSetBlock(x, y, z, blockId);
     rebuildAround(x, y, z);
   });
 
@@ -3695,9 +3732,11 @@ function showScreen(id) {
   if (id) document.getElementById(id).classList.add('active');
 }
 
-document.getElementById('btn-host').addEventListener('click', () => showScreen('host-screen'));
+document.getElementById('btn-host').addEventListener('click', () => showScreen('mode-screen'));
+document.getElementById('mode-creative-btn').addEventListener('click', () => showScreen('host-screen'));
+document.getElementById('mode-back').addEventListener('click', () => showScreen('main-menu'));
 document.getElementById('btn-join').addEventListener('click', () => showScreen('join-screen'));
-document.getElementById('host-back').addEventListener('click', () => showScreen('main-menu'));
+document.getElementById('host-back').addEventListener('click', () => showScreen('mode-screen'));
 document.getElementById('join-back').addEventListener('click', () => showScreen('main-menu'));
 
 // ── Pause menu (Escape) ─────────────────────────────────────────────
@@ -3705,7 +3744,7 @@ function openPause() {
   paused = true;
   if (document.exitPointerLock) document.exitPointerLock();
   document.getElementById('pause-code-val').textContent = myRoomCode || '-------';
-  document.getElementById('pause-leave-label').textContent = isHost ? 'End Game for Everyone' : 'Leave Game';
+  document.getElementById('pause-leave-label').textContent = isHost ? 'End Game' : 'Leave Game';
   showScreen('pause-screen');
 }
 function closePause() {
@@ -3819,7 +3858,7 @@ function startFlappy() {
   const fctx = fc.getContext('2d');
   const FW = fc.width, FH = fc.height;
   const PIPE_W = 40, GAP = 110, PIPE_SPEED = 2.2;
-  const GRAV = 0.45, FLAP = -7.5;
+  const GRAV = 0.3, FLAP = -5.6; // gentler gravity + lower jump (was 0.45 / -7.5)
   let bird, pipes, score, gameOver, flappyRunning, fFrame;
 
   function resetFlappy() {
@@ -4020,7 +4059,11 @@ function broadcastPosition(dt) {
   if (mpMoveTick < 0.033) return; // ~30 updates per second
   mpMoveTick = 0;
   socket.emit('playerMove', {
-    x: player.pos.x, y: player.pos.y, z: player.pos.z, yaw: player.yaw
+    // player.pos.y is the CAMERA/eye height (camera.position.copy(player.pos)).
+    // Remote player models are built with their feet at local y≈0, so we must send
+    // feet-level Y (eye height minus player height) — sending eye-level Y here was
+    // why other players appeared to float above the ground.
+    x: player.pos.x, y: player.pos.y - player.height, z: player.pos.z, yaw: player.yaw
   });
 }
 
