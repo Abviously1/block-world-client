@@ -9,7 +9,7 @@ body{background:#000;overflow:hidden;font-family:'Courier New',monospace;}
 #c{display:block;width:100vw;height:100vh;}
 #ui{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;}
 #cross{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:white;font-size:26px;font-weight:bold;text-shadow:1px 1px 3px #000;pointer-events:none;}
-#hud{position:absolute;top:8px;left:8px;color:#fff;font-size:11px;text-shadow:1px 1px 2px #000;line-height:1.8;}
+#hud{position:absolute;top:56px;left:8px;color:#fff;font-size:11px;text-shadow:1px 1px 2px #000;line-height:1.8;}
 #modetag{position:absolute;top:8px;right:8px;color:#7fff7f;font-size:11px;text-shadow:1px 1px 2px #000;}
 #weatherinfo{position:absolute;top:8px;left:50%;transform:translateX(-50%);color:#fff;font-size:12px;text-shadow:1px 1px 2px #000;text-align:center;}
 /* Dark overlay for underground */
@@ -96,7 +96,7 @@ body.mobile-mode #mobile-inv-dots{display:flex;}
 #flappy-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);border:2px solid #444;border-radius:8px;overflow:hidden;position:relative;}
 #flappy-wrap h3{color:#7af;font-size:11px;letter-spacing:2px;margin-bottom:6px;}
 #flappy{display:block;image-rendering:pixelated;border-radius:4px;}
-#flappy-msg{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;font-size:14px;text-align:center;text-shadow:1px 1px 2px #000;pointer-events:none;}
+#flappy-msg{position:absolute;top:66%;left:50%;transform:translate(-50%,-50%);color:#fff;font-size:14px;text-align:center;text-shadow:1px 1px 2px #000;pointer-events:none;}
 /* Lobby bottom */
 #lobby-bottom{display:flex;flex-direction:column;gap:8px;width:220px;flex-shrink:0;}
 #lobby-code-box{background:rgba(0,0,0,0.7);border:2px solid #444;border-radius:8px;padding:10px;text-align:center;}
@@ -126,7 +126,8 @@ body.mobile-mode #mobile-inv-dots{display:flex;}
 /* Damage flash */
 #hitflash{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;opacity:0;border:6px solid rgba(255,50,50,0.7);transition:opacity 0.1s;}
 /* Minimap */
-#minimap{position:absolute;bottom:90px;right:12px;cursor:pointer;transition:transform 0.2s;}
+#minimap{position:absolute;bottom:90px;right:12px;cursor:pointer;transition:transform 0.2s;z-index:18;}
+body.mobile-mode #minimap:not(.big){bottom:auto;top:56px;right:10px;}
 #minimap canvas{border:2px solid rgba(255,255,255,0.5);border-radius:4px;display:block;image-rendering:pixelated;}
 #minimap.big{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) !important;z-index:50;}
 #minimap.big canvas{width:360px!important;height:360px!important;}
@@ -440,6 +441,10 @@ const SFX={
   doorOpen:()=>{playTone(350,'square',0.08,0.1,220);playTone(280,'square',0.06,0.08,180);},
   doorClose:()=>{playTone(220,'square',0.08,0.1,350);playTone(180,'square',0.06,0.08,280);},
   swim:()=>{playNoise(0.15,0.1,600);},
+  fuse:()=>{playTone(500,'square',0.05,0.05,700);},
+  explode:()=>{playNoise(0.55,0.35,90);playTone(70,'sawtooth',0.5,0.25,25);},
+  bowShoot:()=>{playNoise(0.12,0.12,1400);playTone(180,'sawtooth',0.1,0.08,90);},
+  arrowHit:()=>{playNoise(0.08,0.15,1800);},
 };
 // Ambient sounds — play randomly
 let ambTimer=8+Math.random()*12;
@@ -2311,6 +2316,40 @@ scene.add(sun);
 const moonL=new THREE.DirectionalLight(0x4466aa,0.1);
 scene.add(moonL);
 
+// ── Dynamic torch lighting ──
+// Real per-block lighting isn't feasible at voxel scale, so instead we keep a small capped
+// pool of real THREE.PointLights and re-aim the nearest ones at nearby torches each frame —
+// gives torches actual glow/reach at night without lighting the whole world at once.
+const TORCH_LIGHT_COUNT=10;
+const torchLights=[];
+for(let i=0;i<TORCH_LIGHT_COUNT;i++){
+  const pl=new THREE.PointLight(0xffaa44,0,9,2);
+  scene.add(pl);
+  torchLights.push(pl);
+}
+let torchScanTimer=0;
+function updateTorchLights(dt){
+  torchScanTimer-=dt;
+  if(torchScanTimer>0)return;
+  torchScanTimer=0.5;
+  const px=Math.floor(player.pos.x),py=Math.floor(player.pos.y),pz=Math.floor(player.pos.z);
+  const found=[];
+  const R=11;
+  for(let dx=-R;dx<=R;dx++)for(let dz=-R;dz<=R;dz++)for(let dy=-6;dy<=6;dy++){
+    if(found.length>=TORCH_LIGHT_COUNT*3)break;
+    if(world.getBlock(px+dx,py+dy,pz+dz)===205){
+      found.push({x:px+dx+0.5,y:py+dy+0.6,z:pz+dz+0.5,d:dx*dx+dy*dy+dz*dz});
+    }
+  }
+  found.sort((a,b)=>a.d-b.d);
+  for(let i=0;i<TORCH_LIGHT_COUNT;i++){
+    const pl=torchLights[i];
+    const t=found[i];
+    if(t){pl.position.set(t.x,t.y,t.z);pl.intensity=isDay?0.5:1.6;}
+    else{pl.intensity=0;}
+  }
+}
+
 // Moon — visible 3D sphere orbiting opposite the sun
 const moonMesh=new THREE.Mesh(
   new THREE.SphereGeometry(4,8,8),
@@ -2590,25 +2629,41 @@ function updateLighting(){
 // ══════════════════════════════════════════════════
 // CONTROLS
 // ══════════════════════════════════════════════════
-function toggleFlying(){
-  player.flying=!player.flying;
+function startFlying(){
+  if(player.flying)return;
+  player.flying=true;
   player.vel.y=0;
-  showMsg(player.flying?'✈ Flying ON':'🚶 Walking');
+  showMsg('✈ Flying ON');
 }
+function stopFlying(){
+  if(!player.flying)return;
+  player.flying=false;
+  player.vel.y=0;
+  showMsg('🚶 Walking');
+}
+function toggleFlying(){ if(player.flying) stopFlying(); else startFlying(); }
 const keys={};
 let locked=false,invOpen=false;
-let spaceDown=false,lastSpaceUp=0;
+let spaceDown=false,lastSpaceUp=0,lastShiftUp=0;
 document.addEventListener('keydown',e=>{
   if(keys[e.code])return;// already held — ignore repeat
   keys[e.code]=true;
   if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
-  // Double-tap Space to toggle fly (only on keydown, not repeat)
+  // Double-tap Space to START flying (only on keydown, not repeat). To stop, double-tap Shift instead.
   if(e.code==='Space'){
     const now=Date.now();
     if(now-lastSpaceUp<280&&!(keys['ShiftLeft']||keys['ShiftRight'])){
-      toggleFlying();
+      startFlying();
     }
     lastSpaceUp=0;
+  }
+  // Double-tap Shift to STOP flying (only on keydown, not repeat)
+  if(e.code==='ShiftLeft'||e.code==='ShiftRight'){
+    const now=Date.now();
+    if(now-lastShiftUp<280){
+      stopFlying();
+    }
+    lastShiftUp=0;
   }
   if(e.code==='KeyE')toggleInv();
   if(e.code==='KeyT'&&started&&!chatOpen){e.preventDefault();openChat();}
@@ -2616,10 +2671,13 @@ document.addEventListener('keydown',e=>{
     e.preventDefault();
     if(paused)closePause();else openPause();
   }
+function toggleMinimap(){
+  mmExpanded=!mmExpanded;
+  document.getElementById('minimap').classList.toggle('big',mmExpanded);
+  document.getElementById('minimap-label').textContent=mmExpanded?'🗺 MAP [M to close]':'🗺 MAP [M]';
+}
   if(e.code==='KeyM'){
-    mmExpanded=!mmExpanded;
-    document.getElementById('minimap').classList.toggle('big',mmExpanded);
-    document.getElementById('minimap-label').textContent=mmExpanded?'🗺 MAP [M to close]':'🗺 MAP [M]';
+    toggleMinimap();
   }
   // Flappy Bird flap while in lobby
   if(e.code==='Space'&&!started&&window._flap){e.preventDefault();window._flap();}
@@ -2628,6 +2686,7 @@ document.addEventListener('keydown',e=>{
 document.addEventListener('keyup',e=>{
   keys[e.code]=false;
   if(e.code==='Space')lastSpaceUp=Date.now();
+  if(e.code==='ShiftLeft'||e.code==='ShiftRight')lastShiftUp=Date.now();
 });
 canvas2.addEventListener('click',()=>{if(!locked&&!invOpen)canvas2.requestPointerLock();});
 document.addEventListener('pointerlockchange',()=>{locked=document.pointerLockElement===canvas2;});
@@ -2639,11 +2698,12 @@ document.addEventListener('mousemove',e=>{
 let mHeld={l:false,r:false};
 canvas2.addEventListener('mousedown',e=>{
   if(!locked)return;
-  if(e.button===0){mHeld.l=true;tryAttackMob();tryAttackVillager();breakBlock();}
+  if(e.button===0){mHeld.l=true;performAttack();}
   if(e.button===2){
     mHeld.r=true;
     const hh=raycast();
     if(hh&&DOOR_IDS.has(hh.block))tryToggleDoor();
+    else if(hh&&hh.block===BED_ID)tryUseBed();
     else placeBlock();
   }
 });
@@ -2679,6 +2739,13 @@ function updatePhysics(dt){
     player.pos.z+=player.vel.z*dt;
     if(player.pos.y>=MAX_Y){player.pos.y=MAX_Y;player.vel.y=0;}
     if(player.pos.y<1){player.pos.y=1;player.vel.y=0;}
+    // Sinking (Shift held) shouldn't let you clip through solid ground — but a real hole/cave
+    // in the terrain (no solid block there) still lets you fly straight through, same as before.
+    if(player.vel.y<0&&fSolid(player.pos.x,player.pos.y,player.pos.z)){
+      const gy=Math.floor(player.pos.y-player.height);
+      player.pos.y=gy+player.height+1;
+      player.vel.y=0;
+    }
   }else{
     player.vel.x=mv.x*SPEED;
     player.vel.z=mv.z*SPEED;
@@ -2831,11 +2898,57 @@ function spawnMob(x,y,z,ti){
     cachedSurf:surf,surfTimer:0.5,
     walkTime:Math.random()*Math.PI*2,// phase offset so mobs aren't in sync
     legIdxs,legBase,
+    fleeTimer:0,// set briefly after being hit — walks straight away instead of random wander
+    fuseTimer:0,exploding:false,// Creeper fuse state
     origCols:null};
   mobList.push(mob);
 }
+// Can this mob step onto (gx,gz)? Checked at roughly leg/body height so mobs stop at walls
+// instead of walking straight through player-built structures.
+function mobBlockedAt(gx,gz,surfY){
+  for(let dy=0;dy<=1;dy++){
+    const b=world.getBlock(gx,surfY+dy,gz);
+    if(b&&!isTransparent(b))return true;
+  }
+  return false;
+}
 function initMobs(){
   // Don't spawn all at once - stalls the frame. The loop gradually spawns them.
+}
+// ══════════════════════════════════════════════════
+// ARROWS — fired by Bow/Crossbow, travel fast in a straight line for long-range hits
+// ══════════════════════════════════════════════════
+const RANGED_IDS=new Set([311,317]);// Bow, Crossbow
+const arrowList=[];
+function shootArrow(){
+  const dir=new THREE.Vector3(-Math.cos(player.pitch)*Math.sin(player.yaw),Math.sin(player.pitch),-Math.cos(player.pitch)*Math.cos(player.yaw));
+  const mesh=new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.035,0.55,5),new THREE.MeshLambertMaterial({color:0x8B6914}));
+  mesh.position.copy(player.pos).addScaledVector(dir,0.6);
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir);
+  scene.add(mesh);
+  arrowList.push({mesh,dir:dir.clone(),speed:46,life:2.4,dmg:getSelectedDamage()});
+  SFX.bowShoot();
+}
+function updateArrows(dt){
+  for(let i=arrowList.length-1;i>=0;i--){
+    const a=arrowList[i];
+    a.life-=dt;
+    a.mesh.position.addScaledVector(a.dir,a.speed*dt);
+    let hit=false;
+    for(const mob of mobList){
+      if(!mob.alive)continue;
+      if(mob.mesh.position.distanceTo(a.mesh.position)<0.9){
+        mob.hp-=a.dmg;mob.hitFlash=0.35;SFX.arrowHit();
+        if(!mob.origCols){mob.origCols=mob.mats.map(m=>m.color?m.color.getHex():null);}
+        mob.mats.forEach(m=>{if(m.color)m.color.setRGB(1,0.05,0.05);});
+        if(mob.hp<=0){mob.alive=false;scene.remove(mob.mesh);SFX.die();}
+        else{mob.wanderDir=Math.atan2(mob.mesh.position.x-player.pos.x,mob.mesh.position.z-player.pos.z);mob.fleeTimer=1.6;}
+        hit=true;break;
+      }
+    }
+    if(!hit&&solidAt(a.mesh.position.x,a.mesh.position.y,a.mesh.position.z)){hit=true;SFX.arrowHit();}
+    if(hit||a.life<=0){scene.remove(a.mesh);arrowList.splice(i,1);}
+  }
 }
 function getSelectedDamage(){
   const item=ITEM_BY_ID[player.selectedId];
@@ -2856,11 +2969,43 @@ function tryAttackMob(){
       if(!mob.origCols){mob.origCols=mob.mats.map(m=>m.color?m.color.getHex():null);}
       mob.mats.forEach(m=>{if(m.color)m.color.setRGB(1,0.05,0.05);});
       if(mob.hp<=0){mob.alive=false;scene.remove(mob.mesh);SFX.die();}
+      else{
+        // Flee: turn away from the player and walk straight that direction for a bit.
+        // (Uses the same surface-snapping movement as normal wander, so it stays grounded —
+        // no popping underground and back up.)
+        mob.wanderDir=Math.atan2(mob.mesh.position.x-player.pos.x,mob.mesh.position.z-player.pos.z);
+        mob.fleeTimer=1.6;
+      }
       break;
     }
   }
 }
 let isDay=true;
+function performAttack(){
+  if(RANGED_IDS.has(player.selectedId)){shootArrow();}
+  else{tryAttackMob();tryAttackVillager();breakBlock();}
+}
+const EXPLODE_RADIUS=3.2;
+function explodeCreeper(mob){
+  const cx=Math.round(mob.mesh.position.x),cy=Math.round(mob.mesh.position.y),cz=Math.round(mob.mesh.position.z);
+  SFX.explode();
+  const r=EXPLODE_RADIUS;
+  for(let dx=-3;dx<=3;dx++)for(let dy=-3;dy<=3;dy++)for(let dz=-3;dz<=3;dz++){
+    if(dx*dx+dy*dy+dz*dz>r*r)continue;
+    const bx=cx+dx,by=cy+dy,bz=cz+dz;
+    if(by<1||by>=WH)continue;
+    const b=world.getBlock(bx,by,bz);
+    if(!b||b===12)continue;// skip air & bedrock
+    // Thin the destruction out toward the edge of the radius, like a real explosion
+    if(Math.random()<0.25+0.6*(1-Math.sqrt(dx*dx+dy*dy+dz*dz)/r)){
+      world.setBlock(bx,by,bz,0);
+      rebuildAround(bx,by,bz);
+    }
+  }
+  mob.alive=false;
+  scene.remove(mob.mesh);
+  if(mob.hpBarEl)mob.hpBarEl.remove();
+}
 function updateMobs(dt){
   for(let i=mobList.length-1;i>=0;i--){
     const mob=mobList[i];
@@ -2876,22 +3021,45 @@ function updateMobs(dt){
       }
     }
 
-    // Wander direction
-    mob.wanderTimer-=dt;
-    if(mob.wanderTimer<=0){
-      mob.wanderTimer=2+Math.random()*4;
-      mob.wanderDir+=(Math.random()-0.5)*Math.PI*0.8;
+    const distToPlayer=mob.mesh.position.distanceTo(player.pos);
+
+    // Creeper fuse: gets close, hisses, then explodes if you don't back off
+    if(mob.type.name==='Creeper'){
+      if(distToPlayer<EXPLODE_RADIUS+0.8){
+        if(mob.fuseTimer<=0)SFX.fuse();
+        mob.fuseTimer+=dt;
+        if(mob.fuseTimer>1.3){explodeCreeper(mob);mobList.splice(i,1);continue;}
+      } else {
+        mob.fuseTimer=0;
+      }
+    }
+
+    // Direction for this frame: fleeing > night-follow (hostile) > random wander
+    if(mob.fleeTimer>0){
+      mob.fleeTimer-=dt;
+    } else if(!isDay && mob.type.hostile && distToPlayer<18){
+      // Hostile mobs sense and follow you at night — no damage, just pressure/atmosphere.
+      mob.wanderDir=Math.atan2(player.pos.x-mob.mesh.position.x,player.pos.z-mob.mesh.position.z);
+      mob.wanderTimer=0.3;// keep re-aiming at the player instead of drifting off on the normal timer
+    } else {
+      mob.wanderTimer-=dt;
+      if(mob.wanderTimer<=0){
+        mob.wanderTimer=2+Math.random()*4;
+        mob.wanderDir+=(Math.random()-0.5)*Math.PI*0.8;
+      }
     }
 
     // Water avoidance: getSurface returns Y *above* top block.
     // Water column tops at SL=24, so getSurface returns 25 = SL+1.
     // Any tile where getSurface <= SL+1 is water — do NOT step there.
-    const stepX=mob.mesh.position.x+Math.sin(mob.wanderDir)*0.9;
-    const stepZ=mob.mesh.position.z+Math.cos(mob.wanderDir)*0.9;
+    const stepDist=0.9;
+    const stepX=mob.mesh.position.x+Math.sin(mob.wanderDir)*stepDist;
+    const stepZ=mob.mesh.position.z+Math.cos(mob.wanderDir)*stepDist;
     const aheadSurf=world.getSurface(Math.floor(stepX),Math.floor(stepZ));
-    const moving=aheadSurf>SL+1;
+    const wall=mobBlockedAt(Math.floor(stepX),Math.floor(stepZ),Math.round(mob.mesh.position.y-0.5));
+    const moving=aheadSurf>SL+1&&!wall;
     if(!moving){
-      // Turn away from water — pick direction back toward interior
+      // Blocked by water or a wall — turn away instead of walking into it
       mob.wanderDir+=Math.PI*(0.9+Math.random()*0.2);
       mob.wanderTimer=0.2+Math.random()*0.5;
     } else {
@@ -3268,11 +3436,16 @@ function updateVillagers(dt){
 let timeOfDay=0.35;
 const DAYSPD=0.0012;// faster day/night cycle (was 0.00055)
 const SKYCOLS={night:new THREE.Color(0x05081f),dawn:new THREE.Color(0xff7733),day:new THREE.Color(0x87ceeb),dusk:new THREE.Color(0xff5511)};
+let bedTimeOffsetSec=0;
 function updateDayNight(dt){
   // Pure function of real elapsed time since the shared room epoch — every player computes
   // the exact same value with zero drift, instead of each client accumulating dt independently
   // (which used to let dusk/night happen at different times for different players).
-  const elapsedSec=roomEpochMs?(Date.now()-roomEpochMs)/1000:0;
+  // Sleeping in a bed fast-forwards time LOCALLY (your own view only) via bedTimeOffsetSec —
+  // it doesn't resync everyone else's clock, so one player napping doesn't yank the sun around
+  // for the whole room.
+  if(sleeping)bedTimeOffsetSec+=dt*38;
+  const elapsedSec=(roomEpochMs?(Date.now()-roomEpochMs)/1000:0)+bedTimeOffsetSec;
   timeOfDay=(0.35+elapsedSec*DAYSPD)%1;
   isDay=timeOfDay>0.25&&timeOfDay<0.78;
   let sc,si,ai,nightOverlay=0;
@@ -3421,7 +3594,7 @@ const MM_SIZE=100,MM_RANGE=100;// 100 world blocks shown on 100px canvas (was 60
 let mmExpanded=false;
 // More saturated/distinct per-biome colors so the map reads clearly at a glance
 const BIOME_COLS=['#7fc24a','#3f6e1a','#f2d98a','#e8f6ff','#1fae3a','#d9791f','#a855f7','#9aa0a6','#1f4d1f','#b3281e','#c9955a'];
-document.getElementById('minimap').addEventListener('click',()=>{});// click disabled — use M key
+document.getElementById('minimap').addEventListener('click',toggleMinimap);
 
 let mmTimer=0;
 function updateMinimap(dt){
@@ -3486,6 +3659,14 @@ function updateMinimap(dt){
 // ══════════════════════════════════════════════════
 const DOOR_IDS=new Set([210,211]);// Iron Door, Oak Door
 const openDoors=new Set();// "x,y,z" keys of open doors
+const BED_ID=219;
+let sleeping=false,sleepSpeedMul=1;
+function tryUseBed(){
+  const h=raycast();
+  if(!h||h.block!==BED_ID)return;
+  sleeping=!sleeping;
+  showMsg(sleeping?'💤 Time speeding up... (right-click bed to stop)':'☀ Back to normal speed');
+}
 function tryToggleDoor(){
   const h=raycast();
   if(!h)return;
@@ -3539,13 +3720,15 @@ function loop(t){
   const dt=Math.min((t-lastT)/1000,0.05);
   lastT=t;
   brkCd=Math.max(0,brkCd-dt);plcCd=Math.max(0,plcCd-dt);
-  if(mHeld.l&&brkCd===0){tryAttackMob();tryAttackVillager();breakBlock();}
+  if(mHeld.l&&brkCd===0){performAttack();}
   if(mHeld.r&&plcCd===0)placeBlock();
   updatePhysics(dt);
   updateMobs(dt);
+  updateArrows(dt);
   updateVillagers(dt);
   updateDayNight(dt);
   updateWeather(dt);
+  updateTorchLights(dt);
   updateMinimap(dt);
   updateRemotePlayers(dt);
   broadcastPosition(dt);
@@ -3589,7 +3772,7 @@ function loop(t){
 // Put your own Render server URL here after you deploy it (Step 3 of the setup guide).
 // It will look like: https://block-world-server-xxxx.onrender.com
 // Do NOT put a trailing slash "/" at the end.
-const SERVER_URL = 'https://block-world-server.onrender.com';
+const SERVER_URL = 'https://PASTE-YOUR-RENDER-URL-HERE.onrender.com';
 let socket = null;
 let myId = null;
 let myRoomCode = null;
@@ -4034,7 +4217,11 @@ lookZone.addEventListener('touchend', e => {
   const heldMs = Date.now() - lookStartT;
   mHeld.l = false; // stop mining if it was active
   if (!lookMoved && heldMs <= TAP_MAX_MS) {
-    placeBlock(); // quick tap = place (mirrors desktop's other mouse button)
+    // Quick tap = "use" (mirrors desktop's right-click): open/close a door, use a bed, or place a block
+    const th = raycast();
+    if (th && DOOR_IDS.has(th.block)) tryToggleDoor();
+    else if (th && th.block === BED_ID) tryUseBed();
+    else placeBlock();
   }
   lookTouchId = null;
 }, { passive: false });
@@ -4045,7 +4232,7 @@ let lastJumpTapT = 0;
 function doJumpTap(){
   const now = Date.now();
   if (now - lastJumpTapT < 300) {
-    toggleFlying();
+    startFlying();
     jumpBtn.style.display = player.flying ? 'none' : 'flex';
     flyArrows.classList.toggle('show', player.flying);
   }
@@ -4064,7 +4251,7 @@ flyDownBtn.addEventListener('touchstart', e => {
   if (now - lastFlyDownTapT < 300) {
     // Double-tap the down arrow to stop flying
     keys['ShiftLeft'] = false;
-    toggleFlying();
+    stopFlying();
     jumpBtn.style.display = player.flying ? 'none' : 'flex';
     flyArrows.classList.toggle('show', player.flying);
   }
@@ -4448,11 +4635,33 @@ chatInput.addEventListener('keydown', (e) => {
 });
 
 // ── World load (called after countdown) ──────────────────────────
+const LOADING_TIPS = [
+  'Generating world...', 'Carving caves & terrain...', 'Building villages...',
+  'Placing structures...', 'Painting biomes...', 'Growing forests...',
+  'Crafting items...', 'Building maps...', 'Digging mineshafts...',
+  'Filling oceans...', 'Sculpting mountains...', 'Planting crops...',
+  'Baking terrain textures...', 'Spawning creatures...', 'Laying bedrock...',
+  'Assembling chunks...', 'Lighting torches...', 'Placing chests...',
+  'Herding sheep...', 'Polishing diamonds...'
+];
+let loadTipTimer = null;
+function startLoadingTips(loadMsg){
+  let i = 0;
+  loadMsg.textContent = LOADING_TIPS[0];
+  clearInterval(loadTipTimer);
+  loadTipTimer = setInterval(() => {
+    i = (i + 1) % LOADING_TIPS.length;
+    loadMsg.textContent = LOADING_TIPS[i];
+  }, 700);
+}
+function stopLoadingTips(){ clearInterval(loadTipTimer); loadTipTimer = null; }
+
 function launchWorldLoad() {
   const loadEl = document.getElementById('loading');
   const loadMsg = document.getElementById('loadMsg');
   const loadBar = document.getElementById('loadBar');
   loadEl.style.display = 'flex';
+  startLoadingTips(loadMsg);
 
   const ORIGIN_CX = Math.floor(8/CS), ORIGIN_CZ = Math.floor(8/CS);
   for (let dx=-RENDER_R; dx<=RENDER_R; dx++) for (let dz=-RENDER_R; dz<=RENDER_R; dz++) {
@@ -4487,12 +4696,10 @@ function launchWorldLoad() {
       else if (spawnVillageAreas.length) { tryBuildVillage(...spawnVillageAreas.shift()); done++; }
     }
     loadBar.style.width = Math.round(done/total*100) + '%';
-    if (chunksToGen.length > total*0.6) loadMsg.textContent = 'Carving caves & terrain...';
-    else if (spawnVillageAreas.length > 0) loadMsg.textContent = 'Building villages...';
-    else loadMsg.textContent = 'Placing structures...';
     if (done < total) {
       setTimeout(nextBatch, 0);
     } else {
+      stopLoadingTips();
       loadMsg.textContent = 'Ready!';
       loadBar.style.width = '100%';
       setTimeout(() => {
