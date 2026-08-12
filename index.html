@@ -15,7 +15,10 @@ body{background:#000;overflow:hidden;font-family:'Courier New',monospace;}
 /* Dark overlay for underground */
 #darkoverlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0);pointer-events:none;transition:background 0.4s;}
 /* Hotbar */
-#hotbar{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:3px;}
+#hotbar{display:flex;gap:3px;}
+#hotbar-row{z-index:18;}
+#mobile-inv-dots{width:44px;height:44px;background:rgba(255,255,255,0.15);border:2px solid rgba(255,255,255,0.4);border-radius:6px;color:#fff;font-size:20px;display:none;align-items:center;justify-content:center;pointer-events:all;margin-left:4px;letter-spacing:1px;}
+body.mobile-mode #mobile-inv-dots{display:flex;}
 .hs{width:52px;height:52px;background:rgba(60,60,60,0.88);border:2px solid #555;border-radius:3px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;}
 .hs.active{border-color:#fff;background:rgba(120,120,120,0.95);}
 .hs canvas{image-rendering:pixelated;}
@@ -138,6 +141,38 @@ body{background:#000;overflow:hidden;font-family:'Courier New',monospace;}
 #pause-code-val{color:#ffe066;font-size:22px;letter-spacing:4px;font-weight:bold;margin-bottom:6px;}
 #lobby-leave-btn{margin-top:6px;background:#333;border:2px solid #555;color:#aaa;padding:8px;font-size:11px;font-family:'Courier New',monospace;cursor:pointer;border-radius:4px;width:100%;}
 #lobby-leave-btn:hover{background:#444;color:#ddd;}
+
+/* Always-visible settings gear (top-left) — works via click OR touch, on any device mode */
+#gear-btn{position:absolute;top:10px;left:10px;width:38px;height:38px;background:rgba(0,0,0,0.55);border:2px solid rgba(255,255,255,0.35);border-radius:50%;color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;pointer-events:all;z-index:25;user-select:none;-webkit-user-select:none;touch-action:manipulation;}
+#gear-btn:active{background:rgba(0,0,0,0.8);}
+
+/* Settings screen */
+#settings-screen .panel{width:min(420px,92vw);}
+.set-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #333;color:#ddd;font-size:12px;}
+.set-row:last-of-type{border-bottom:none;}
+.set-lbl{flex:1;}
+.set-sub{font-size:9px;color:#888;margin-top:2px;}
+.toggle2{display:flex;background:#222;border:2px solid #555;border-radius:20px;overflow:hidden;flex-shrink:0;}
+.toggle2 button{background:transparent;border:none;color:#999;padding:6px 12px;font-size:11px;font-family:'Courier New',monospace;cursor:pointer;}
+.toggle2 button.on{background:#4a8a3a;color:#fff;}
+.switch1{width:44px;height:24px;background:#333;border:2px solid #555;border-radius:14px;position:relative;cursor:pointer;flex-shrink:0;}
+.switch1 .knob{position:absolute;top:1px;left:1px;width:16px;height:16px;background:#999;border-radius:50%;transition:left 0.15s;}
+.switch1.on{background:#3a6a2a;border-color:#4a8a3a;}
+.switch1.on .knob{left:21px;background:#fff;}
+
+/* ── Mobile touch controls ── */
+#mobile-controls{position:absolute;inset:0;display:none;pointer-events:none;}
+body.mobile-mode #mobile-controls{display:block;}
+body.mobile-mode #cross{width:22px;height:22px;line-height:22px;border:2px solid rgba(255,255,255,0.85);border-radius:50%;font-size:0;box-shadow:0 0 4px rgba(0,0,0,0.6);}
+#joy-base{position:absolute;bottom:100px;width:110px;height:110px;border-radius:50%;background:rgba(255,255,255,0.12);border:2px solid rgba(255,255,255,0.35);pointer-events:all;touch-action:none;}
+#joy-knob{position:absolute;top:50%;left:50%;width:48px;height:48px;margin:-24px;border-radius:50%;background:rgba(255,255,255,0.5);border:2px solid rgba(255,255,255,0.7);pointer-events:none;}
+#jump-btn{position:absolute;bottom:110px;width:74px;height:74px;border-radius:50%;background:rgba(255,255,255,0.18);border:2px solid rgba(255,255,255,0.4);color:#fff;font-size:26px;display:flex;align-items:center;justify-content:center;pointer-events:all;touch-action:none;user-select:none;-webkit-user-select:none;}
+#jump-btn:active{background:rgba(255,255,255,0.35);}
+#fly-arrows{position:absolute;bottom:100px;width:74px;display:none;flex-direction:column;gap:6px;pointer-events:all;}
+#fly-arrows.show{display:flex;}
+.fly-arrow{width:74px;height:52px;border-radius:14px;background:rgba(120,180,255,0.25);border:2px solid rgba(255,255,255,0.4);color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center;touch-action:none;user-select:none;-webkit-user-select:none;}
+.fly-arrow:active{background:rgba(120,180,255,0.5);}
+#look-zone{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:all;touch-action:none;}
 </style>
 </head>
 <body>
@@ -145,6 +180,7 @@ body{background:#000;overflow:hidden;font-family:'Courier New',monospace;}
 <canvas id="wcanvas"></canvas>
 <canvas id="skycanvas"></canvas>
 <div id="ui">
+  <div id="gear-btn">⚙</div>
   <div id="cross">+</div>
   <div id="darkoverlay"></div>
   <div id="hitflash"></div>
@@ -160,13 +196,26 @@ body{background:#000;overflow:hidden;font-family:'Courier New',monospace;}
     <canvas id="mmcanvas" width="100" height="100" style="width:100px;height:100px;"></canvas>
     <div id="minimap-label">🗺 MAP [M]</div>
   </div>
-  <div id="hotbar"></div>
+  <div id="hotbar-row" style="position:absolute;bottom:16px;left:50%;transform:translateX(-50%);display:flex;align-items:flex-end;">
+    <div id="hotbar"></div>
+    <div id="mobile-inv-dots">⋯</div>
+  </div>
   <div id="inv">
     <h2>⛏ INVENTORY — ALL ITEMS</h2>
     <input id="inv-srch" placeholder="Search anything..." autocomplete="off">
     <div id="inv-tabs"></div>
     <div id="inv-body"></div>
     <button id="inv-close">Close [E]</button>
+  </div>
+  <!-- Touch controls — only visible in Mobile device mode -->
+  <div id="mobile-controls">
+    <div id="look-zone"></div>
+    <div id="joy-base"><div id="joy-knob"></div></div>
+    <div id="jump-btn">⤒</div>
+    <div id="fly-arrows">
+      <div class="fly-arrow" id="fly-up">▲</div>
+      <div class="fly-arrow" id="fly-down">▼</div>
+    </div>
   </div>
 </div>
 <!-- ══ MAIN MENU ══ -->
@@ -270,7 +319,38 @@ body{background:#000;overflow:hidden;font-family:'Courier New',monospace;}
     <div id="pause-code-lbl">ROOM CODE</div>
     <div id="pause-code-val">-------</div>
     <button class="mbtn green" id="pause-resume">▶ Resume</button>
+    <button class="mbtn blue" id="pause-settings">⚙ Settings</button>
     <button class="mbtn" id="pause-leave" style="background:#a03030;border-color:#701010;color:#fff;">🚪 <span id="pause-leave-label">Leave Game</span></button>
+  </div>
+</div>
+
+<!-- ══ SETTINGS ══ -->
+<div id="settings-screen" class="screen">
+  <h1>⚙ SETTINGS</h1>
+  <div class="panel">
+    <div class="set-row">
+      <div class="set-lbl">Device Mode<div class="set-sub">Mobile enables touch controls (joystick, buttons)</div></div>
+      <div class="toggle2" id="set-device-toggle">
+        <button data-v="computer">🖥 Computer</button>
+        <button data-v="mobile">📱 Mobile</button>
+      </div>
+    </div>
+    <div class="set-row" id="set-hand-row">
+      <div class="set-lbl">Dominant Hand<div class="set-sub">Mirrors the joystick/buttons for mobile</div></div>
+      <div class="toggle2" id="set-hand-toggle">
+        <button data-v="right">Right</button>
+        <button data-v="left">Left</button>
+      </div>
+    </div>
+    <div class="set-row">
+      <div class="set-lbl">Sound Effects</div>
+      <div class="switch1" id="set-sound-switch"><div class="knob"></div></div>
+    </div>
+    <div class="set-row" id="set-latejoin-row" style="display:none;">
+      <div class="set-lbl">Allow Late Joins<div class="set-sub">Let players join with the room code after the game has started</div></div>
+      <div class="switch1" id="set-latejoin-switch"><div class="knob"></div></div>
+    </div>
+    <button class="mbtn" id="settings-back" style="width:100%;margin-top:16px;background:#333;border-color:#555;color:#aaa;padding:10px;">← Back</button>
   </div>
 </div>
 
@@ -300,11 +380,34 @@ body{background:#000;overflow:hidden;font-family:'Courier New',monospace;}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 // ══════════════════════════════════════════════════
+// SETTINGS — device mode, handedness, sound, late joins
+// Persisted in localStorage (this is a real deployed website, not a
+// claude.ai artifact preview, so localStorage works fine here).
+// ══════════════════════════════════════════════════
+function loadSettings(){
+  let s={};
+  try{ s=JSON.parse(localStorage.getItem('bw_settings')||'{}'); }catch(e){}
+  return {
+    deviceMode: s.deviceMode==='mobile'?'mobile':'computer', // computer is always the default, per spec
+    dominantHand: s.dominantHand==='left'?'left':'right',
+    soundOn: s.soundOn!==false
+  };
+}
+function saveSettings(){
+  try{
+    localStorage.setItem('bw_settings', JSON.stringify({deviceMode,dominantHand,soundOn}));
+  }catch(e){}
+}
+let {deviceMode,dominantHand,soundOn} = loadSettings();
+let allowLateJoins = false; // host-only room setting, synced with server (not persisted locally)
+
+// ══════════════════════════════════════════════════
 // SOUND ENGINE — Web Audio API, no files needed
 // ══════════════════════════════════════════════════
 let audioCtx=null;
 function getAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
 function playTone(freq,type,dur,vol=0.18,freqEnd=null){
+  if(!soundOn)return;
   try{
     const a=getAudio();const g=a.createGain();const o=a.createOscillator();
     o.type=type;o.frequency.setValueAtTime(freq,a.currentTime);
@@ -315,6 +418,7 @@ function playTone(freq,type,dur,vol=0.18,freqEnd=null){
   }catch(e){}
 }
 function playNoise(dur,vol=0.12,hipass=400){
+  if(!soundOn)return;
   try{
     const a=getAudio();const buf=a.createBuffer(1,a.sampleRate*dur,a.sampleRate);
     const d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1);
@@ -2486,6 +2590,11 @@ function updateLighting(){
 // ══════════════════════════════════════════════════
 // CONTROLS
 // ══════════════════════════════════════════════════
+function toggleFlying(){
+  player.flying=!player.flying;
+  player.vel.y=0;
+  showMsg(player.flying?'✈ Flying ON':'🚶 Walking');
+}
 const keys={};
 let locked=false,invOpen=false;
 let spaceDown=false,lastSpaceUp=0;
@@ -2497,9 +2606,7 @@ document.addEventListener('keydown',e=>{
   if(e.code==='Space'){
     const now=Date.now();
     if(now-lastSpaceUp<280&&!(keys['ShiftLeft']||keys['ShiftRight'])){
-      player.flying=!player.flying;
-      player.vel.y=0;
-      showMsg(player.flying?'✈ Flying ON':'🚶 Walking');
+      toggleFlying();
     }
     lastSpaceUp=0;
   }
@@ -3261,8 +3368,11 @@ let invCat='All';
 function toggleInv(){
   invOpen=!invOpen;
   document.getElementById('inv').classList.toggle('open',invOpen);
+  // The full-screen touch look/joystick layer would otherwise sit on top of the inventory
+  // panel and swallow every tap meant for it — hide it while the inventory is open.
+  document.getElementById('mobile-controls').style.visibility = invOpen ? 'hidden' : 'visible';
   if(invOpen){document.exitPointerLock();buildInvTabs();renderInv('');}
-  else canvas2.requestPointerLock();
+  else if(deviceMode==='computer')canvas2.requestPointerLock();
 }
 document.getElementById('inv-close').addEventListener('click',toggleInv);
 document.getElementById('inv-srch').addEventListener('input',e=>renderInv(e.target.value));
@@ -3535,6 +3645,24 @@ function connectSocket() {
     document.getElementById('join-code').classList.add('err');
   });
 
+  // Late join: server sends this instead of joinSuccess+lobby when the game already started
+  // and the host has "Allow Late Joins" turned on — skip the lobby entirely.
+  socket.on('joinMidGame', ({ code, seed, epochMs, players }) => {
+    myRoomCode = code;
+    isHost = false;
+    showScreen(null);
+    if (typeof seed === 'number') { world.setSeed(seed); mpSeed = seed; }
+    roomEpochMs = typeof epochMs === 'number' ? epochMs : Date.now();
+    launchWorldLoad();
+    if (players) players.forEach(p => { if (p.id !== myId) buildRemotePlayer(p.id, p.outfit, p.name); });
+  });
+
+  // An existing player in the room learns a new player joined mid-game.
+  socket.on('playerJoined', ({ id, name, outfit }) => {
+    if (id !== myId && !remotePlayers[id]) buildRemotePlayer(id, outfit, name);
+    showChatMsg(`${name} joined the game`, '#7f7');
+  });
+
   socket.on('lobbyUpdate', (state) => {
     if (state) renderLobbyPlayers(state);
   });
@@ -3750,7 +3878,7 @@ function openPause() {
 function closePause() {
   paused = false;
   showScreen(null);
-  if (canvas2 && canvas2.requestPointerLock) canvas2.requestPointerLock();
+  if (deviceMode === 'computer' && canvas2 && canvas2.requestPointerLock) canvas2.requestPointerLock();
 }
 document.getElementById('pause-resume').addEventListener('click', closePause);
 document.getElementById('pause-leave').addEventListener('click', () => {
@@ -3760,6 +3888,192 @@ document.getElementById('pause-leave').addEventListener('click', () => {
   // Give the message a brief moment to reach the server before we tear everything down.
   setTimeout(() => location.reload(), 150);
 });
+
+// ── Settings screen ─────────────────────────────────────────────
+function applyDeviceMode() {
+  document.body.classList.toggle('mobile-mode', deviceMode === 'mobile');
+  updateHotbarUI(); // hotbar re-renders show/hide the "..." dots button via CSS already, but keep in sync
+}
+function refreshSettingsUI() {
+  document.querySelectorAll('#set-device-toggle button').forEach(b => b.classList.toggle('on', b.dataset.v === deviceMode));
+  document.querySelectorAll('#set-hand-toggle button').forEach(b => b.classList.toggle('on', b.dataset.v === dominantHand));
+  document.getElementById('set-sound-switch').classList.toggle('on', soundOn);
+  document.getElementById('set-latejoin-row').style.display = isHost ? 'flex' : 'none';
+  document.getElementById('set-latejoin-switch').classList.toggle('on', allowLateJoins);
+}
+document.getElementById('pause-settings').addEventListener('click', () => {
+  refreshSettingsUI();
+  showScreen('settings-screen');
+});
+document.getElementById('settings-back').addEventListener('click', () => showScreen('pause-screen'));
+document.getElementById('gear-btn').addEventListener('click', () => {
+  if (!started) return; // only meaningful once you're actually in a game
+  openPause();
+  refreshSettingsUI();
+  showScreen('settings-screen');
+});
+document.querySelectorAll('#set-device-toggle button').forEach(b => {
+  b.addEventListener('click', () => {
+    deviceMode = b.dataset.v;
+    saveSettings();
+    applyDeviceMode();
+    refreshSettingsUI();
+  });
+});
+document.querySelectorAll('#set-hand-toggle button').forEach(b => {
+  b.addEventListener('click', () => {
+    dominantHand = b.dataset.v;
+    saveSettings();
+    layoutMobileControls();
+    refreshSettingsUI();
+  });
+});
+document.getElementById('set-sound-switch').addEventListener('click', () => {
+  soundOn = !soundOn;
+  saveSettings();
+  refreshSettingsUI();
+});
+document.getElementById('set-latejoin-switch').addEventListener('click', () => {
+  if (!isHost) return;
+  allowLateJoins = !allowLateJoins;
+  if (socket && socket.connected) socket.emit('setAllowLateJoins', allowLateJoins);
+  refreshSettingsUI();
+});
+applyDeviceMode(); // apply whatever was loaded from localStorage right away
+
+// ── Mobile touch controls ─────────────────────────────────────────────
+const joyBase = document.getElementById('joy-base');
+const joyKnob = document.getElementById('joy-knob');
+const jumpBtn = document.getElementById('jump-btn');
+const flyArrows = document.getElementById('fly-arrows');
+const flyUpBtn = document.getElementById('fly-up');
+const flyDownBtn = document.getElementById('fly-down');
+const lookZone = document.getElementById('look-zone');
+const mobileInvDots = document.getElementById('mobile-inv-dots');
+
+// Position the joystick/buttons according to dominant hand (right-handed = joystick left, default)
+function layoutMobileControls(){
+  const rightHanded = dominantHand !== 'left';
+  joyBase.style.left = rightHanded ? '28px' : '';
+  joyBase.style.right = rightHanded ? '' : '28px';
+  jumpBtn.style.right = rightHanded ? '28px' : '';
+  jumpBtn.style.left = rightHanded ? '' : '28px';
+  flyArrows.style.right = rightHanded ? '28px' : '';
+  flyArrows.style.left = rightHanded ? '' : '28px';
+}
+layoutMobileControls();
+
+// ── Joystick (movement) ──
+let joyTouchId = null, joyCenterX = 0, joyCenterY = 0;
+const JOY_RADIUS = 46;
+function joyStart(e){
+  const t = e.changedTouches[0];
+  joyTouchId = t.identifier;
+  const r = joyBase.getBoundingClientRect();
+  joyCenterX = r.left + r.width/2;
+  joyCenterY = r.top + r.height/2;
+  joyMove(e);
+}
+function joyMove(e){
+  if (joyTouchId === null) return;
+  const t = [...e.changedTouches].find(t => t.identifier === joyTouchId);
+  if (!t) return;
+  let dx = t.clientX - joyCenterX, dy = t.clientY - joyCenterY;
+  const dist = Math.min(JOY_RADIUS, Math.hypot(dx, dy));
+  const ang = Math.atan2(dy, dx);
+  const kx = Math.cos(ang) * dist, ky = Math.sin(ang) * dist;
+  joyKnob.style.transform = `translate(${kx}px,${ky}px)`;
+  // Normalize to -1..1 and drive the same "keys" the keyboard uses (supports diagonals naturally)
+  const nx = dist < 8 ? 0 : (kx / JOY_RADIUS);
+  const ny = dist < 8 ? 0 : (ky / JOY_RADIUS);
+  keys['KeyW'] = ny < -0.3;
+  keys['KeyS'] = ny > 0.3;
+  keys['KeyA'] = nx < -0.3;
+  keys['KeyD'] = nx > 0.3;
+}
+function joyEnd(e){
+  const t = [...e.changedTouches].find(t => t.identifier === joyTouchId);
+  if (!t) return;
+  joyTouchId = null;
+  joyKnob.style.transform = 'translate(0,0)';
+  keys['KeyW'] = keys['KeyS'] = keys['KeyA'] = keys['KeyD'] = false;
+}
+joyBase.addEventListener('touchstart', e => { e.preventDefault(); joyStart(e); }, { passive: false });
+joyBase.addEventListener('touchmove', e => { e.preventDefault(); joyMove(e); }, { passive: false });
+joyBase.addEventListener('touchend', e => { e.preventDefault(); joyEnd(e); }, { passive: false });
+joyBase.addEventListener('touchcancel', e => { joyEnd(e); });
+
+// ── Look-drag (camera) + tap-to-place / hold-to-break (aims at the center crosshair, like real Minecraft) ──
+let lookTouchId = null, lookLastX = 0, lookLastY = 0, lookStartT = 0, lookMoved = false;
+const TOUCH_LOOK_SENS = 0.0055;
+const TAP_MAX_MS = 220, TAP_MAX_MOVE = 12;
+lookZone.addEventListener('touchstart', e => {
+  if (invOpen || chatOpen || paused) return;
+  e.preventDefault();
+  const t = e.changedTouches[0];
+  lookTouchId = t.identifier;
+  lookLastX = t.clientX; lookLastY = t.clientY;
+  lookStartT = Date.now();
+  lookMoved = false;
+}, { passive: false });
+lookZone.addEventListener('touchmove', e => {
+  const t = [...e.changedTouches].find(t => t.identifier === lookTouchId);
+  if (!t) return;
+  e.preventDefault();
+  const dx = t.clientX - lookLastX, dy = t.clientY - lookLastY;
+  if (Math.abs(dx) + Math.abs(dy) > TAP_MAX_MOVE) lookMoved = true;
+  lookLastX = t.clientX; lookLastY = t.clientY;
+  player.yaw -= dx * TOUCH_LOOK_SENS;
+  player.pitch = Math.max(-Math.PI/2+0.01, Math.min(Math.PI/2-0.01, player.pitch - dy * TOUCH_LOOK_SENS));
+  // Held long enough while barely moving = start mining (matches "tap and hold to mine")
+  if (!lookMoved && Date.now() - lookStartT > TAP_MAX_MS) mHeld.l = true;
+}, { passive: false });
+lookZone.addEventListener('touchend', e => {
+  const t = [...e.changedTouches].find(t => t.identifier === lookTouchId);
+  if (!t) return;
+  const heldMs = Date.now() - lookStartT;
+  mHeld.l = false; // stop mining if it was active
+  if (!lookMoved && heldMs <= TAP_MAX_MS) {
+    placeBlock(); // quick tap = place (mirrors desktop's other mouse button)
+  }
+  lookTouchId = null;
+}, { passive: false });
+lookZone.addEventListener('touchcancel', () => { lookTouchId = null; mHeld.l = false; });
+
+// ── Jump / Fly ──
+let lastJumpTapT = 0;
+function doJumpTap(){
+  const now = Date.now();
+  if (now - lastJumpTapT < 300) {
+    toggleFlying();
+    jumpBtn.style.display = player.flying ? 'none' : 'flex';
+    flyArrows.classList.toggle('show', player.flying);
+  }
+  lastJumpTapT = now;
+  if (!player.flying && player.onGround) { player.vel.y = JUMP; player.onGround = false; SFX.jump(); }
+}
+jumpBtn.addEventListener('touchstart', e => { e.preventDefault(); doJumpTap(); }, { passive: false });
+
+let lastFlyDownTapT = 0;
+flyUpBtn.addEventListener('touchstart', e => { e.preventDefault(); keys['Space'] = true; }, { passive: false });
+flyUpBtn.addEventListener('touchend', e => { e.preventDefault(); keys['Space'] = false; }, { passive: false });
+flyDownBtn.addEventListener('touchstart', e => {
+  e.preventDefault();
+  keys['ShiftLeft'] = true;
+  const now = Date.now();
+  if (now - lastFlyDownTapT < 300) {
+    // Double-tap the down arrow to stop flying
+    keys['ShiftLeft'] = false;
+    toggleFlying();
+    jumpBtn.style.display = player.flying ? 'none' : 'flex';
+    flyArrows.classList.toggle('show', player.flying);
+  }
+  lastFlyDownTapT = now;
+}, { passive: false });
+flyDownBtn.addEventListener('touchend', e => { e.preventDefault(); keys['ShiftLeft'] = false; }, { passive: false });
+
+// ── Mobile "..." button opens the same full inventory as desktop's E key ──
+mobileInvDots.addEventListener('click', toggleInv);
 
 // Leave from the lobby (before the game has started) — just disconnects and resets.
 const lobbyLeaveBtn = document.getElementById('lobby-leave-btn');
@@ -4036,10 +4350,19 @@ function updateRemotePlayers(dt) {
     rp.mesh.position.set(rp.pos.x, rp.pos.y, rp.pos.z);
     rp.mesh.rotation.y = rp.yaw;
 
-    // Project name tag to screen space
-    const pos3 = new THREE.Vector3(rp.pos.x, rp.pos.y + 2.3, rp.pos.z);
-    pos3.project(camera);
-    if (pos3.z < 1) {
+    // Project name tag to screen space.
+    // NOTE: we deliberately do NOT rely on pos3.z from project() to decide visibility —
+    // that value is clipped against the camera's far plane (120 units, tuned for terrain
+    // rendering), which was why name tags used to vanish once someone walked far enough
+    // away even though they were still plainly in front of you. Name tags are a flat 2D
+    // overlay, not 3D geometry, so they shouldn't be limited by render distance at all.
+    const headPos = new THREE.Vector3(rp.pos.x, rp.pos.y + 2.3, rp.pos.z);
+    const toPlayer = headPos.clone().sub(camera.position);
+    const camForward = new THREE.Vector3();
+    camera.getWorldDirection(camForward);
+    const inFront = toPlayer.dot(camForward) > 0;
+    if (inFront) {
+      const pos3 = headPos.clone().project(camera); // x/y are valid regardless of far-plane clipping
       const x = (pos3.x * 0.5 + 0.5) * window.innerWidth;
       const y = (-pos3.y * 0.5 + 0.5) * window.innerHeight;
       rp.nameTagEl.style.display = 'block';
@@ -4109,7 +4432,7 @@ function closeChat() {
   chatOpen = false;
   chatInputWrap.style.display = 'none';
   chatInput.value = '';
-  canvas2.requestPointerLock();
+  if(deviceMode==='computer')canvas2.requestPointerLock();
 }
 
 chatInput.addEventListener('keydown', (e) => {
