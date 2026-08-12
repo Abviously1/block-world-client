@@ -2645,6 +2645,11 @@ function toggleFlying(){ if(player.flying) stopFlying(); else startFlying(); }
 const keys={};
 let locked=false,invOpen=false;
 let spaceDown=false,lastSpaceUp=0,lastShiftUp=0;
+function toggleMinimap(){
+  mmExpanded=!mmExpanded;
+  document.getElementById('minimap').classList.toggle('big',mmExpanded);
+  document.getElementById('minimap-label').textContent=mmExpanded?'🗺 MAP [M to close]':'🗺 MAP [M]';
+}
 document.addEventListener('keydown',e=>{
   if(keys[e.code])return;// already held — ignore repeat
   keys[e.code]=true;
@@ -2671,11 +2676,6 @@ document.addEventListener('keydown',e=>{
     e.preventDefault();
     if(paused)closePause();else openPause();
   }
-function toggleMinimap(){
-  mmExpanded=!mmExpanded;
-  document.getElementById('minimap').classList.toggle('big',mmExpanded);
-  document.getElementById('minimap-label').textContent=mmExpanded?'🗺 MAP [M to close]':'🗺 MAP [M]';
-}
   if(e.code==='KeyM'){
     toggleMinimap();
   }
