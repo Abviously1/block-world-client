@@ -95,7 +95,7 @@ body.mobile-mode #mobile-inv-dots{display:flex;}
 /* Flappy Bird */
 #flappy-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);border:2px solid #444;border-radius:8px;overflow:hidden;position:relative;}
 #flappy-wrap h3{color:#7af;font-size:11px;letter-spacing:2px;margin-bottom:6px;}
-#flappy{display:block;image-rendering:pixelated;border-radius:4px;}
+#flappy{display:block;image-rendering:pixelated;border-radius:4px;touch-action:none;-webkit-user-select:none;user-select:none;}
 #flappy-msg{position:absolute;top:66%;left:50%;transform:translate(-50%,-50%);color:#fff;font-size:14px;text-align:center;text-shadow:1px 1px 2px #000;pointer-events:none;}
 /* Lobby bottom */
 #lobby-bottom{display:flex;flex-direction:column;gap:8px;width:220px;flex-shrink:0;}
@@ -126,7 +126,7 @@ body.mobile-mode #mobile-inv-dots{display:flex;}
 /* Damage flash */
 #hitflash{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;opacity:0;border:6px solid rgba(255,50,50,0.7);transition:opacity 0.1s;}
 /* Minimap */
-#minimap{position:absolute;bottom:90px;right:12px;cursor:pointer;transition:transform 0.2s;z-index:18;}
+#minimap{position:absolute;bottom:90px;right:12px;cursor:pointer;transition:transform 0.2s;z-index:18;pointer-events:all;touch-action:manipulation;}
 body.mobile-mode #minimap:not(.big){bottom:auto;top:56px;right:10px;}
 #minimap canvas{border:2px solid rgba(255,255,255,0.5);border-radius:4px;display:block;image-rendering:pixelated;}
 #minimap.big{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) !important;z-index:50;}
@@ -142,6 +142,63 @@ body.mobile-mode #minimap:not(.big){bottom:auto;top:56px;right:10px;}
 #pause-code-val{color:#ffe066;font-size:22px;letter-spacing:4px;font-weight:bold;margin-bottom:6px;}
 #lobby-leave-btn{margin-top:6px;background:#333;border:2px solid #555;color:#aaa;padding:8px;font-size:11px;font-family:'Courier New',monospace;cursor:pointer;border-radius:4px;width:100%;}
 #lobby-leave-btn:hover{background:#444;color:#ddd;}
+
+/* ── Inventory sections (Inventory / Armor / Crafting) ── */
+#inv-sections{display:flex;gap:4px;margin-bottom:8px;}
+.inv-sec-btn{flex:1;background:#222;border:2px solid #444;color:#999;padding:8px 4px;font-family:'Courier New',monospace;font-size:11px;cursor:pointer;border-radius:4px;}
+.inv-sec-btn.on{background:#3a5a2a;border-color:#5a8a3a;color:#fff;}
+.inv-page{max-height:60vh;overflow-y:auto;}
+.inv-hint{color:#999;font-size:10px;text-align:center;margin:6px 0;}
+
+/* ── Armor paper-doll ── */
+#armor-doll{display:flex;flex-direction:column;gap:6px;align-items:center;margin:10px 0;}
+.armor-slot{width:64px;height:64px;background:rgba(255,255,255,0.06);border:2px dashed #555;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#666;font-size:10px;cursor:pointer;}
+.armor-slot.filled{border-style:solid;border-color:#7a9a5a;background:rgba(122,154,90,0.15);color:#fff;}
+#armor-body{display:grid;grid-template-columns:repeat(auto-fill,minmax(60px,1fr));gap:6px;padding:6px 0;}
+.armor-item{background:rgba(60,60,60,0.6);border:2px solid #555;border-radius:4px;padding:6px 4px;text-align:center;font-size:9px;color:#ddd;cursor:pointer;}
+.armor-item:hover{border-color:#8a8;}
+
+/* ── Crafting recipe list ── */
+.recipe-card{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.05);border:1px solid #444;border-radius:6px;padding:8px;margin-bottom:6px;}
+.recipe-ins{display:flex;align-items:center;gap:4px;flex-wrap:wrap;flex:1;font-size:10px;color:#ccc;}
+.recipe-ing{display:flex;align-items:center;gap:3px;background:rgba(0,0,0,0.3);border-radius:3px;padding:2px 6px;}
+.recipe-arrow{color:#888;font-size:16px;}
+.recipe-out{display:flex;align-items:center;gap:5px;font-size:11px;color:#fff;font-weight:bold;}
+.craft-btn{background:#3a6a2a;border:2px solid #5a9a3a;color:#fff;padding:6px 12px;border-radius:4px;font-size:10px;cursor:pointer;font-family:'Courier New',monospace;}
+.craft-btn:hover{background:#4a8a3a;}
+.mini-ic{width:20px;height:20px;border-radius:2px;flex-shrink:0;}
+
+/* ── Trading ── */
+#trade-screen .panel{max-height:80vh;overflow-y:auto;}
+.trade-offer{display:flex;align-items:center;justify-content:space-between;gap:8px;background:rgba(255,255,255,0.06);border:1px solid #555;border-radius:6px;padding:8px 10px;margin-bottom:8px;}
+.trade-give,.trade-get{display:flex;align-items:center;gap:6px;font-size:11px;color:#ddd;}
+
+/* ══ PHONE RESPONSIVENESS ══
+   iPads have enough room for the desktop-ish layout as-is. Phones don't — menus need to
+   shrink to fit narrow portrait screens, and gameplay (played in landscape, which on a phone
+   is a SHORT screen, unlike an iPad) needs the touch controls pulled in tighter so nothing
+   overlaps or runs off the edges. */
+@media (max-width:600px){
+  .panel{padding:12px;width:96vw;}
+  .mbtn{padding:10px 18px;font-size:13px;letter-spacing:1px;}
+  .screen h1{margin-bottom:4px;letter-spacing:2px;}
+  input{font-size:14px!important;padding:8px!important;}
+  .set-row{padding:7px 0;font-size:11px;}
+  #minimap-label{font-size:8px;}
+}
+@media (max-height:480px){
+  /* Landscape phone gameplay — short viewport, tighten everything vertically */
+  #joy-base{width:82px;height:82px;bottom:14px;}
+  #jump-btn{width:56px;height:56px;bottom:20px;font-size:20px;}
+  #fly-arrows{bottom:14px;}
+  .fly-arrow{width:56px;height:38px;font-size:16px;}
+  #hotbar-row{bottom:6px;}
+  .hs{width:34px!important;height:34px!important;}
+  #hud{top:44px;font-size:9px;line-height:1.5;}
+  #gear-btn{width:30px;height:30px;font-size:14px;top:6px;left:6px;}
+  body.mobile-mode #minimap:not(.big){top:6px;}
+  #minimap canvas{width:70px!important;height:70px!important;}
+}
 
 /* Always-visible settings gear (top-left) — works via click OR touch, on any device mode */
 #gear-btn{position:absolute;top:10px;left:10px;width:38px;height:38px;background:rgba(0,0,0,0.55);border:2px solid rgba(255,255,255,0.35);border-radius:50%;color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;pointer-events:all;z-index:25;user-select:none;-webkit-user-select:none;touch-action:manipulation;}
@@ -164,7 +221,10 @@ body.mobile-mode #minimap:not(.big){bottom:auto;top:56px;right:10px;}
 /* ── Mobile touch controls ── */
 #mobile-controls{position:absolute;inset:0;display:none;pointer-events:none;}
 body.mobile-mode #mobile-controls{display:block;}
-body.mobile-mode #cross{width:22px;height:22px;line-height:22px;border:2px solid rgba(255,255,255,0.85);border-radius:50%;font-size:0;box-shadow:0 0 4px rgba(0,0,0,0.6);}
+body.mobile-mode #cross{display:none;}
+#touch-reticle{position:absolute;width:26px;height:26px;border:2px solid rgba(255,255,255,0.9);border-radius:50%;box-shadow:0 0 5px rgba(0,0,0,0.6);pointer-events:none;transform:translate(-50%,-50%);display:none;z-index:16;transition:width 0.1s,height 0.1s;}
+#touch-reticle.active{display:block;}
+#touch-reticle.targeting{border-color:#ffe066;width:30px;height:30px;}
 #joy-base{position:absolute;bottom:100px;width:110px;height:110px;border-radius:50%;background:rgba(255,255,255,0.12);border:2px solid rgba(255,255,255,0.35);pointer-events:all;touch-action:none;}
 #joy-knob{position:absolute;top:50%;left:50%;width:48px;height:48px;margin:-24px;border-radius:50%;background:rgba(255,255,255,0.5);border:2px solid rgba(255,255,255,0.7);pointer-events:none;}
 #jump-btn{position:absolute;bottom:110px;width:74px;height:74px;border-radius:50%;background:rgba(255,255,255,0.18);border:2px solid rgba(255,255,255,0.4);color:#fff;font-size:26px;display:flex;align-items:center;justify-content:center;pointer-events:all;touch-action:none;user-select:none;-webkit-user-select:none;}
@@ -202,15 +262,45 @@ body.mobile-mode #cross{width:22px;height:22px;line-height:22px;border:2px solid
     <div id="mobile-inv-dots">⋯</div>
   </div>
   <div id="inv">
-    <h2>⛏ INVENTORY — ALL ITEMS</h2>
-    <input id="inv-srch" placeholder="Search anything..." autocomplete="off">
-    <div id="inv-tabs"></div>
-    <div id="inv-body"></div>
+    <h2>⛏ INVENTORY</h2>
+    <div id="inv-sections">
+      <button class="inv-sec-btn on" data-sec="inventory">🎒 Inventory</button>
+      <button class="inv-sec-btn" data-sec="armor">🛡 Armor</button>
+      <button class="inv-sec-btn" data-sec="crafting">🔨 Crafting</button>
+    </div>
+    <div id="inv-page-inventory" class="inv-page">
+      <input id="inv-srch" placeholder="Search anything..." autocomplete="off">
+      <div id="inv-tabs"></div>
+      <div id="inv-body"></div>
+    </div>
+    <div id="inv-page-armor" class="inv-page" style="display:none;">
+      <div id="armor-doll">
+        <div class="armor-slot" id="armor-slot-head" data-slot="head">Head</div>
+        <div class="armor-slot" id="armor-slot-chest" data-slot="chest">Chest</div>
+        <div class="armor-slot" id="armor-slot-legs" data-slot="legs">Legs</div>
+        <div class="armor-slot" id="armor-slot-feet" data-slot="feet">Feet</div>
+      </div>
+      <p class="inv-hint">Tap a piece below to equip it. Tap an equipped piece above to remove it.</p>
+      <div id="armor-body"></div>
+    </div>
+    <div id="inv-page-crafting" class="inv-page" style="display:none;">
+      <input id="craft-srch" placeholder="Search recipes..." autocomplete="off">
+      <div id="craft-body"></div>
+    </div>
     <button id="inv-close">Close [E]</button>
+  </div>
+  <!-- Villager trading -->
+  <div id="trade-screen" class="screen">
+    <h1 id="trade-title">🧑‍🌾 TRADING</h1>
+    <div class="panel" style="width:min(480px,94vw);">
+      <div id="trade-body"></div>
+      <button class="mbtn" id="trade-close" style="width:100%;margin-top:14px;background:#333;border-color:#555;color:#aaa;padding:10px;">← Close</button>
+    </div>
   </div>
   <!-- Touch controls — only visible in Mobile device mode -->
   <div id="mobile-controls">
     <div id="look-zone"></div>
+    <div id="touch-reticle"></div>
     <div id="joy-base"><div id="joy-knob"></div></div>
     <div id="jump-btn">⤒</div>
     <div id="fly-arrows">
@@ -388,8 +478,19 @@ body.mobile-mode #cross{width:22px;height:22px;line-height:22px;border:2px solid
 function loadSettings(){
   let s={};
   try{ s=JSON.parse(localStorage.getItem('bw_settings')||'{}'); }catch(e){}
+  // If the person has never touched this setting before, guess a sensible default: a device
+  // with only a coarse (touch) pointer and no fine (mouse) pointer is a phone/tablet, so start
+  // it in Mobile mode automatically — this is why phone players used to see no joystick at all,
+  // they were silently defaulted to Computer controls with no way to move. A saved preference
+  // (from actually using the Settings toggle) always wins over this guess.
+  let autoGuess='computer';
+  try{
+    if(window.matchMedia && window.matchMedia('(pointer: coarse)').matches && !window.matchMedia('(pointer: fine)').matches){
+      autoGuess='mobile';
+    }
+  }catch(e){}
   return {
-    deviceMode: s.deviceMode==='mobile'?'mobile':'computer', // computer is always the default, per spec
+    deviceMode: s.deviceMode==='mobile'?'mobile':(s.deviceMode==='computer'?'computer':autoGuess),
     dominantHand: s.dominantHand==='left'?'left':'right',
     soundOn: s.soundOn!==false
   };
@@ -1871,6 +1972,41 @@ const ITEM_CATEGORIES = {
     {id:395,label:'Ghast Tear',color:'#aaddff',placeable:false},
     {id:396,label:'Heart of the Sea',color:'#2266cc',placeable:false},
   ],
+  'Armor & Crafting': [
+    {id:397,label:'Stick',color:'#8B6914',placeable:false},
+    {id:398,label:'Leather',color:'#a0653a',placeable:false},
+    {id:399,label:'Emerald',color:'#0ac462',placeable:false},
+    // Armor — 4 materials x 4 slots, each tagged with armorSlot/armorTier for the Armor screen
+    {id:400,label:'Leather Helmet',color:'#a0653a',placeable:false,armorSlot:'head',armorTier:'Leather'},
+    {id:401,label:'Leather Chestplate',color:'#a0653a',placeable:false,armorSlot:'chest',armorTier:'Leather'},
+    {id:402,label:'Leather Leggings',color:'#8a5530',placeable:false,armorSlot:'legs',armorTier:'Leather'},
+    {id:403,label:'Leather Boots',color:'#7a4a28',placeable:false,armorSlot:'feet',armorTier:'Leather'},
+    {id:404,label:'Iron Helmet',color:'#ccc',placeable:false,armorSlot:'head',armorTier:'Iron'},
+    {id:405,label:'Iron Chestplate',color:'#ccc',placeable:false,armorSlot:'chest',armorTier:'Iron'},
+    {id:406,label:'Iron Leggings',color:'#bbb',placeable:false,armorSlot:'legs',armorTier:'Iron'},
+    {id:407,label:'Iron Boots',color:'#aaa',placeable:false,armorSlot:'feet',armorTier:'Iron'},
+    {id:408,label:'Golden Helmet',color:'#ffdd00',placeable:false,armorSlot:'head',armorTier:'Golden'},
+    {id:409,label:'Golden Chestplate',color:'#ffdd00',placeable:false,armorSlot:'chest',armorTier:'Golden'},
+    {id:410,label:'Golden Leggings',color:'#eecc00',placeable:false,armorSlot:'legs',armorTier:'Golden'},
+    {id:411,label:'Golden Boots',color:'#ddbb00',placeable:false,armorSlot:'feet',armorTier:'Golden'},
+    {id:412,label:'Diamond Helmet',color:'#55ffff',placeable:false,armorSlot:'head',armorTier:'Diamond'},
+    {id:413,label:'Diamond Chestplate',color:'#55ffff',placeable:false,armorSlot:'chest',armorTier:'Diamond'},
+    {id:414,label:'Diamond Leggings',color:'#44eeee',placeable:false,armorSlot:'legs',armorTier:'Diamond'},
+    {id:415,label:'Diamond Boots',color:'#33dddd',placeable:false,armorSlot:'feet',armorTier:'Diamond'},
+    // Tools/weapons needed to complete crafting recipes that weren't already items
+    {id:416,label:'Wooden Sword',color:'#c8a048',placeable:false},
+    {id:417,label:'Stone Sword',color:'#888',placeable:false},
+    {id:418,label:'Iron Sword',color:'#ccc',placeable:false},
+    {id:419,label:'Diamond Sword',color:'#55ffff',placeable:false},
+    {id:420,label:'Wooden Pickaxe',color:'#c8a048',placeable:false},
+    {id:421,label:'Stone Pickaxe',color:'#888',placeable:false},
+    {id:422,label:'Iron Pickaxe',color:'#ccc',placeable:false},
+    {id:423,label:'Diamond Pickaxe',color:'#55ffff',placeable:false},
+    {id:424,label:'Wooden Axe',color:'#c8a048',placeable:false},
+    {id:425,label:'Iron Axe',color:'#ccc',placeable:false},
+    {id:426,label:'Shears',color:'#ccc',placeable:false},
+    {id:427,label:'Fishing Rod',color:'#8B6914',placeable:false},
+  ],
 };
 
 // Flat item list for lookup
@@ -2558,8 +2694,13 @@ function findSpawn(){
 // ══════════════════════════════════════════════════
 // IMPROVED RAYCASTING
 // ══════════════════════════════════════════════════
+// While actively dragging on the mobile look-zone, this holds the 3D direction the touch
+// reticle is currently pointing at (computed from the finger's screen position, like a real
+// mouse pointer) — raycast() uses it instead of the camera-center direction, exactly like real
+// Minecraft Bedrock's touch aiming (no fixed center crosshair needed on mobile).
+let mobileAimDir=null;
 function raycast(maxD=7){
-  const dir=new THREE.Vector3(-Math.cos(player.pitch)*Math.sin(player.yaw),Math.sin(player.pitch),-Math.cos(player.pitch)*Math.cos(player.yaw));
+  const dir=mobileAimDir||new THREE.Vector3(-Math.cos(player.pitch)*Math.sin(player.yaw),Math.sin(player.pitch),-Math.cos(player.pitch)*Math.cos(player.yaw));
   let x=Math.floor(player.pos.x),y=Math.floor(player.pos.y-0.3),z=Math.floor(player.pos.z);
   const sx=dir.x>0?1:-1,sy=dir.y>0?1:-1,sz=dir.z>0?1:-1;
   const ox=player.pos.x,oy=player.pos.y-0.3,oz=player.pos.z;
@@ -2701,6 +2842,7 @@ canvas2.addEventListener('mousedown',e=>{
   if(e.button===0){mHeld.l=true;performAttack();}
   if(e.button===2){
     mHeld.r=true;
+    if(tryUseVillager())return;
     const hh=raycast();
     if(hh&&DOOR_IDS.has(hh.block))tryToggleDoor();
     else if(hh&&hh.block===BED_ID)tryUseBed();
@@ -2920,7 +3062,10 @@ function initMobs(){
 // ══════════════════════════════════════════════════
 const RANGED_IDS=new Set([311,317]);// Bow, Crossbow
 const arrowList=[];
+let arrowCd=0;
 function shootArrow(){
+  if(arrowCd>0)return;// 0.75s reload between shots — no bow-spamming
+  arrowCd=0.75;
   const dir=new THREE.Vector3(-Math.cos(player.pitch)*Math.sin(player.yaw),Math.sin(player.pitch),-Math.cos(player.pitch)*Math.cos(player.yaw));
   const mesh=new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.035,0.55,5),new THREE.MeshLambertMaterial({color:0x8B6914}));
   mesh.position.copy(player.pos).addScaledVector(dir,0.6);
@@ -3035,9 +3180,11 @@ function updateMobs(dt){
     }
 
     // Direction for this frame: fleeing > night-follow (hostile) > random wander
+    if(mob.avoidTimer===undefined)mob.avoidTimer=0;
+    if(mob.avoidTimer>0)mob.avoidTimer-=dt;
     if(mob.fleeTimer>0){
       mob.fleeTimer-=dt;
-    } else if(!isDay && mob.type.hostile && distToPlayer<18){
+    } else if(!isDay && mob.type.hostile && distToPlayer<18 && mob.avoidTimer<=0){
       // Hostile mobs sense and follow you at night — no damage, just pressure/atmosphere.
       mob.wanderDir=Math.atan2(player.pos.x-mob.mesh.position.x,player.pos.z-mob.mesh.position.z);
       mob.wanderTimer=0.3;// keep re-aiming at the player instead of drifting off on the normal timer
@@ -3059,9 +3206,13 @@ function updateMobs(dt){
     const wall=mobBlockedAt(Math.floor(stepX),Math.floor(stepZ),Math.round(mob.mesh.position.y-0.5));
     const moving=aheadSurf>SL+1&&!wall;
     if(!moving){
-      // Blocked by water or a wall — turn away instead of walking into it
+      // Blocked by water or a wall — turn away instead of walking into it.
+      // avoidTimer briefly overrides the night-follow re-aim above, so a mob stuck at a wall
+      // actually turns and tries a new angle instead of snapping straight back at you every
+      // single frame (that instant re-aim was what caused mobs to visibly vibrate in place).
       mob.wanderDir+=Math.PI*(0.9+Math.random()*0.2);
       mob.wanderTimer=0.2+Math.random()*0.5;
+      mob.avoidTimer=0.5;
     } else {
       mob.mesh.position.x+=Math.sin(mob.wanderDir)*mob.type.speed*dt;
       mob.mesh.position.z+=Math.cos(mob.wanderDir)*mob.type.speed*dt;
@@ -3347,6 +3498,31 @@ function tryBuildVillage(areaCX,areaCZ){
   }
 }
 
+const VILLAGER_PROFESSIONS=[
+  {name:'Farmer',emoji:'🌾',trades:[
+    {give:{id:9999,label:'Wheat',count:20},get:{id:399,label:'Emerald',count:1}},
+    {give:{id:399,label:'Emerald',count:1},get:{id:9998,label:'Bread',count:6}},
+    {give:{id:399,label:'Emerald',count:3},get:{id:9997,label:'Golden Apple',count:1}},
+  ]},
+  {name:'Librarian',emoji:'📚',trades:[
+    {give:{id:399,label:'Emerald',count:5},get:{id:379,label:'Enchanted Book',count:1}},
+    {give:{id:399,label:'Emerald',count:2},get:{id:378,label:'Book',count:3}},
+    {give:{id:399,label:'Emerald',count:1},get:{id:394,label:'Clock',count:1}},
+  ]},
+  {name:'Blacksmith',emoji:'⚒',trades:[
+    {give:{id:399,label:'Emerald',count:4},get:{id:375,label:'Iron Ingot',count:4}},
+    {give:{id:399,label:'Emerald',count:8},get:{id:418,label:'Iron Sword',count:1}},
+    {give:{id:399,label:'Emerald',count:10},get:{id:404,label:'Iron Helmet',count:1}},
+  ]},
+  {name:'Cleric',emoji:'🔮',trades:[
+    {give:{id:399,label:'Emerald',count:3},get:{id:382,label:'Ender Pearl',count:1}},
+    {give:{id:399,label:'Emerald',count:5},get:{id:395,label:'Ghast Tear',count:1}},
+  ]},
+  {name:'Fletcher',emoji:'🏹',trades:[
+    {give:{id:399,label:'Emerald',count:2},get:{id:391,label:'Flint',count:8}},
+    {give:{id:399,label:'Emerald',count:6},get:{id:311,label:'Bow',count:1}},
+  ]},
+];
 function spawnVillager(x,y,z,vcx,vcz){
   const g=new THREE.Group();
   g.add(mkBox(0.5,0.75,0.28,0x6633aa,0,0.38,0));
@@ -3362,6 +3538,7 @@ function spawnVillager(x,y,z,vcx,vcz){
   scene.add(g);
   // Cache materials for fast hit-flash
   const mats=[];g.traverse(c=>{if(c.isMesh&&c.material)mats.push(c.material);});
+  const profession=VILLAGER_PROFESSIONS[Math.floor(Math.random()*VILLAGER_PROFESSIONS.length)];
   villagers.push({
     mesh:g,mats,
     hp:20,maxHp:20,alive:true,
@@ -3371,8 +3548,27 @@ function spawnVillager(x,y,z,vcx,vcz){
     wanderTimer:Math.random()*3,
     hitFlash:0,
     origCols:null,
-    cachedSurf:y-1,surfTimer:0
+    cachedSurf:y-1,surfTimer:0,
+    profession
   });
+}
+// Shared "who's directly in front of me" check — used for both attacking and trading with villagers.
+function findVillagerInFront(maxDist){
+  const dir=mobileAimDir||new THREE.Vector3(-Math.cos(player.pitch)*Math.sin(player.yaw),Math.sin(player.pitch),-Math.cos(player.pitch)*Math.cos(player.yaw));
+  for(const v of villagers){
+    if(!v.alive)continue;
+    const dist=v.mesh.position.distanceTo(player.pos);
+    if(dist>maxDist)continue;
+    const toV=v.mesh.position.clone().sub(player.pos).normalize();
+    if(toV.dot(dir)>0.8)return v;
+  }
+  return null;
+}
+function tryUseVillager(){
+  const v=findVillagerInFront(4.5);
+  if(!v)return false;
+  openTradeScreen(v);
+  return true;
 }
 
 function tryAttackVillager(){
@@ -3586,6 +3782,161 @@ function renderInv(q){
 }
 
 // ══════════════════════════════════════════════════
+// INVENTORY SECTIONS (Inventory / Armor / Crafting)
+// ══════════════════════════════════════════════════
+let invSection='inventory';
+document.querySelectorAll('.inv-sec-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    invSection=btn.dataset.sec;
+    document.querySelectorAll('.inv-sec-btn').forEach(b=>b.classList.toggle('on',b===btn));
+    document.querySelectorAll('.inv-page').forEach(p=>p.style.display='none');
+    document.getElementById('inv-page-'+invSection).style.display='block';
+    if(invSection==='armor'){renderArmorScreen();}
+    if(invSection==='crafting'){renderCraftScreen('');}
+  });
+});
+
+// ── Armor ──
+// This update is UI/inventory prep for Survival — armor can be equipped and shows on your
+// paper-doll, but doesn't reduce damage yet since there's no player-damage system at all
+// yet (mobs still can't hurt you). That wiring comes with the rest of Survival mode.
+let equippedArmor={head:null,chest:null,legs:null,feet:null};
+const ARMOR_ITEMS=ITEM_CATEGORIES['Armor & Crafting'].filter(it=>it.armorSlot);
+function renderArmorScreen(){
+  ['head','chest','legs','feet'].forEach(slot=>{
+    const el=document.getElementById('armor-slot-'+slot);
+    const eq=equippedArmor[slot];
+    if(eq){
+      el.classList.add('filled');
+      el.innerHTML='';
+      el.appendChild(makeIcon(eq,32));
+    } else {
+      el.classList.remove('filled');
+      el.innerHTML=slot.charAt(0).toUpperCase()+slot.slice(1);
+    }
+    el.onclick=()=>{
+      if(equippedArmor[slot]){equippedArmor[slot]=null;renderArmorScreen();}
+    };
+  });
+  const body=document.getElementById('armor-body');body.innerHTML='';
+  ARMOR_ITEMS.forEach(item=>{
+    const el=document.createElement('div');el.className='armor-item';
+    el.appendChild(makeIcon(item,28));
+    const lbl=document.createElement('div');lbl.textContent=item.label;el.appendChild(lbl);
+    el.addEventListener('click',()=>{equippedArmor[item.armorSlot]=item;renderArmorScreen();});
+    body.appendChild(el);
+  });
+}
+
+// ── Crafting ──
+// Still Creative mode (unlimited materials, same as everything else), so "crafting" here works
+// like a recipe book: pick a recipe and it goes straight to your hotbar — real Minecraft
+// recipes/shapes for reference, no resource-consumption bookkeeping since that doesn't exist
+// anywhere else in Creative yet either. That's exactly what real limited crafting needs Survival
+// mode's resource system for, which is the next update.
+const RECIPES=[
+  {out:397,outCount:4,label:'Stick',ins:[{id:51,count:2}]},
+  {out:210,outCount:1,label:'Oak Door',ins:[{id:51,count:6}]},
+  {out:219,outCount:1,label:'Bed',ins:[{id:140,count:3},{id:51,count:3}]},
+  {out:205,outCount:4,label:'Torch',ins:[{id:372,count:1},{id:397,count:1}]},
+  {out:416,outCount:1,label:'Wooden Sword',ins:[{id:51,count:2},{id:397,count:1}]},
+  {out:417,outCount:1,label:'Stone Sword',ins:[{id:7,count:2},{id:397,count:1}]},
+  {out:418,outCount:1,label:'Iron Sword',ins:[{id:375,count:2},{id:397,count:1}]},
+  {out:419,outCount:1,label:'Diamond Sword',ins:[{id:373,count:2},{id:397,count:1}]},
+  {out:420,outCount:1,label:'Wooden Pickaxe',ins:[{id:51,count:3},{id:397,count:2}]},
+  {out:421,outCount:1,label:'Stone Pickaxe',ins:[{id:7,count:3},{id:397,count:2}]},
+  {out:422,outCount:1,label:'Iron Pickaxe',ins:[{id:375,count:3},{id:397,count:2}]},
+  {out:423,outCount:1,label:'Diamond Pickaxe',ins:[{id:373,count:3},{id:397,count:2}]},
+  {out:424,outCount:1,label:'Wooden Axe',ins:[{id:51,count:3},{id:397,count:2}]},
+  {out:425,outCount:1,label:'Iron Axe',ins:[{id:375,count:3},{id:397,count:2}]},
+  {out:311,outCount:1,label:'Bow',ins:[{id:397,count:3},{id:390,count:3}]},
+  {out:426,outCount:1,label:'Shears',ins:[{id:375,count:2}]},
+  {out:427,outCount:1,label:'Fishing Rod',ins:[{id:397,count:3},{id:390,count:2}]},
+  {out:400,outCount:1,label:'Leather Helmet',ins:[{id:398,count:5}]},
+  {out:401,outCount:1,label:'Leather Chestplate',ins:[{id:398,count:8}]},
+  {out:402,outCount:1,label:'Leather Leggings',ins:[{id:398,count:7}]},
+  {out:403,outCount:1,label:'Leather Boots',ins:[{id:398,count:4}]},
+  {out:404,outCount:1,label:'Iron Helmet',ins:[{id:375,count:5}]},
+  {out:405,outCount:1,label:'Iron Chestplate',ins:[{id:375,count:8}]},
+  {out:406,outCount:1,label:'Iron Leggings',ins:[{id:375,count:7}]},
+  {out:407,outCount:1,label:'Iron Boots',ins:[{id:375,count:4}]},
+  {out:408,outCount:1,label:'Golden Helmet',ins:[{id:376,count:5}]},
+  {out:409,outCount:1,label:'Golden Chestplate',ins:[{id:376,count:8}]},
+  {out:410,outCount:1,label:'Golden Leggings',ins:[{id:376,count:7}]},
+  {out:411,outCount:1,label:'Golden Boots',ins:[{id:376,count:4}]},
+  {out:412,outCount:1,label:'Diamond Helmet',ins:[{id:373,count:5}]},
+  {out:413,outCount:1,label:'Diamond Chestplate',ins:[{id:373,count:8}]},
+  {out:414,outCount:1,label:'Diamond Leggings',ins:[{id:373,count:7}]},
+  {out:415,outCount:1,label:'Diamond Boots',ins:[{id:373,count:4}]},
+];
+function renderCraftScreen(q){
+  const body=document.getElementById('craft-body');body.innerHTML='';
+  const ql=(q||'').toLowerCase();
+  RECIPES.filter(r=>!ql||r.label.toLowerCase().includes(ql)).forEach(r=>{
+    const card=document.createElement('div');card.className='recipe-card';
+    const insWrap=document.createElement('div');insWrap.className='recipe-ins';
+    r.ins.forEach(ing=>{
+      const item=ITEM_BY_ID[ing.id];if(!item)return;
+      const w=document.createElement('div');w.className='recipe-ing';
+      w.appendChild(makeIcon(item,20));
+      const t=document.createElement('span');t.textContent='x'+ing.count;w.appendChild(t);
+      insWrap.appendChild(w);
+    });
+    const arrow=document.createElement('div');arrow.className='recipe-arrow';arrow.textContent='→';
+    const outItem=ITEM_BY_ID[r.out];
+    const outWrap=document.createElement('div');outWrap.className='recipe-out';
+    if(outItem)outWrap.appendChild(makeIcon(outItem,26));
+    const outLbl=document.createElement('span');outLbl.textContent=r.label+(r.outCount>1?' x'+r.outCount:'');outWrap.appendChild(outLbl);
+    const btn=document.createElement('button');btn.className='craft-btn';btn.textContent='Craft';
+    btn.addEventListener('click',()=>{
+      player.selectedId=r.out;hotbar[hotbarIdx]=r.out;buildHotbarUI();
+      document.getElementById('selD').textContent='📦 '+r.label;
+      showMsg('🔨 Crafted '+r.label);
+      SFX.place&&SFX.place();
+    });
+    card.appendChild(insWrap);card.appendChild(arrow);card.appendChild(outWrap);card.appendChild(btn);
+    body.appendChild(card);
+  });
+}
+document.getElementById('craft-srch').addEventListener('input',e=>renderCraftScreen(e.target.value));
+
+// ── Villager trading ──
+function itemOrFallback(ref){
+  return ITEM_BY_ID[ref.id]||{id:ref.id,label:ref.label,color:'#888',placeable:false};
+}
+function openTradeScreen(villager){
+  paused=true;
+  if(document.exitPointerLock)document.exitPointerLock();
+  document.getElementById('trade-title').textContent=villager.profession.emoji+' '+villager.profession.name;
+  const body=document.getElementById('trade-body');body.innerHTML='';
+  villager.profession.trades.forEach(t=>{
+    const row=document.createElement('div');row.className='trade-offer';
+    const give=document.createElement('div');give.className='trade-give';
+    give.appendChild(makeIcon(itemOrFallback(t.give),24));
+    const giveTxt=document.createElement('span');giveTxt.textContent='Give '+t.give.count+'x '+t.give.label;give.appendChild(giveTxt);
+    const arrow=document.createElement('div');arrow.className='recipe-arrow';arrow.textContent='→';
+    const get=document.createElement('div');get.className='trade-get';
+    get.appendChild(makeIcon(itemOrFallback(t.get),24));
+    const getTxt=document.createElement('span');getTxt.textContent='Get '+t.get.count+'x '+t.get.label;get.appendChild(getTxt);
+    const btn=document.createElement('button');btn.className='craft-btn';btn.textContent='Trade';
+    btn.addEventListener('click',()=>{
+      const outItem=itemOrFallback(t.get);
+      player.selectedId=outItem.id;hotbar[hotbarIdx]=outItem.id;buildHotbarUI();
+      showMsg('🤝 Traded for '+t.get.label);
+      SFX.place&&SFX.place();
+    });
+    row.appendChild(give);row.appendChild(arrow);row.appendChild(get);row.appendChild(btn);
+    body.appendChild(row);
+  });
+  showScreen('trade-screen');
+}
+document.getElementById('trade-close').addEventListener('click',()=>{
+  paused=false;
+  showScreen(null);
+  if(deviceMode==='computer'&&canvas2&&canvas2.requestPointerLock)canvas2.requestPointerLock();
+});
+
+// ══════════════════════════════════════════════════
 // MINIMAP
 // ══════════════════════════════════════════════════
 const mmCanvas=document.getElementById('mmcanvas');
@@ -3595,6 +3946,7 @@ let mmExpanded=false;
 // More saturated/distinct per-biome colors so the map reads clearly at a glance
 const BIOME_COLS=['#7fc24a','#3f6e1a','#f2d98a','#e8f6ff','#1fae3a','#d9791f','#a855f7','#9aa0a6','#1f4d1f','#b3281e','#c9955a'];
 document.getElementById('minimap').addEventListener('click',toggleMinimap);
+document.getElementById('minimap').addEventListener('touchstart',(e)=>{e.preventDefault();e.stopPropagation();toggleMinimap();},{passive:false});
 
 let mmTimer=0;
 function updateMinimap(dt){
@@ -3719,7 +4071,7 @@ function loop(t){
   if(!started||paused)return;
   const dt=Math.min((t-lastT)/1000,0.05);
   lastT=t;
-  brkCd=Math.max(0,brkCd-dt);plcCd=Math.max(0,plcCd-dt);
+  brkCd=Math.max(0,brkCd-dt);plcCd=Math.max(0,plcCd-dt);arrowCd=Math.max(0,arrowCd-dt);
   if(mHeld.l&&brkCd===0){performAttack();}
   if(mHeld.r&&plcCd===0)placeBlock();
   updatePhysics(dt);
@@ -3785,12 +4137,22 @@ const remotePlayers = {};
 
 function connectSocket() {
   if (socket && socket.connected) return;
-  socket = io(SERVER_URL, { transports: ['websocket','polling'] });
+  // Render's free tier sleeps after inactivity — the very first connection of the day can take
+  // 30-60s to wake it up. The default socket.io timeout (20s) was too short for that, which is
+  // why "Create Room" sometimes silently did nothing on the first try but worked on the second
+  // (by then the server was already awake). Give it a full minute before giving up.
+  socket = io(SERVER_URL, { transports: ['websocket','polling'], timeout: 60000, reconnectionAttempts: 5 });
   myId = null;
 
   socket.on('connect', () => {
     myId = socket.id;
     console.log('[MP] Connected:', myId);
+    setConnectingState(false);
+  });
+
+  socket.on('connect_error', (err) => {
+    console.log('[MP] Connect error:', err && err.message);
+    setConnectingState(false, "Couldn't reach the server — it may still be waking up. Please try again.");
   });
 
   socket.on('disconnect', () => {
@@ -3800,16 +4162,18 @@ function connectSocket() {
 
   // ── Lobby events ──
   socket.on('hostSuccess', ({ code }) => {
+    setConnectingState(false);
     myRoomCode = code;
     isHost = true;
     enterLobby(code);
   });
 
   socket.on('hostError', (msg) => {
-    document.getElementById('host-err').textContent = msg;
+    setConnectingState(false, msg);
   });
 
   socket.on('joinSuccess', ({ code, blockChanges, chatHistory }) => {
+    setConnectingState(false);
     myRoomCode = code;
     isHost = false;
     // Apply any block changes that happened before we joined
@@ -3824,6 +4188,7 @@ function connectSocket() {
   });
 
   socket.on('joinError', (msg) => {
+    setConnectingState(false);
     document.getElementById('join-err').textContent = msg;
     document.getElementById('join-code').classList.add('err');
   });
@@ -3831,6 +4196,7 @@ function connectSocket() {
   // Late join: server sends this instead of joinSuccess+lobby when the game already started
   // and the host has "Allow Late Joins" turned on — skip the lobby entirely.
   socket.on('joinMidGame', ({ code, seed, epochMs, players }) => {
+    setConnectingState(false);
     myRoomCode = code;
     isHost = false;
     showScreen(null);
@@ -4186,10 +4552,24 @@ joyBase.addEventListener('touchmove', e => { e.preventDefault(); joyMove(e); }, 
 joyBase.addEventListener('touchend', e => { e.preventDefault(); joyEnd(e); }, { passive: false });
 joyBase.addEventListener('touchcancel', e => { joyEnd(e); });
 
-// ── Look-drag (camera) + tap-to-place / hold-to-break (aims at the center crosshair, like real Minecraft) ──
+// ── Look-drag (camera) + tap-to-use / hold-to-mine — real Minecraft Bedrock style: dragging
+// pans the camera AND leaves a small reticle right where your finger is, and whatever that
+// reticle is over is what tap/hold acts on (no fixed center crosshair on mobile). ──
+const touchReticle = document.getElementById('touch-reticle');
 let lookTouchId = null, lookLastX = 0, lookLastY = 0, lookStartT = 0, lookMoved = false;
 const TOUCH_LOOK_SENS = 0.0055;
 const TAP_MAX_MS = 220, TAP_MAX_MOVE = 12;
+const _reticleRaycaster = new THREE.Raycaster();
+function updateReticleAt(sx, sy){
+  touchReticle.style.left = sx + 'px';
+  touchReticle.style.top = sy + 'px';
+  const ndcX = (sx / window.innerWidth) * 2 - 1;
+  const ndcY = -(sy / window.innerHeight) * 2 + 1;
+  _reticleRaycaster.setFromCamera(new THREE.Vector2(ndcX, ndcY), camera);
+  mobileAimDir = _reticleRaycaster.ray.direction.clone();
+  const hit = raycast();
+  touchReticle.classList.toggle('targeting', !!hit);
+}
 lookZone.addEventListener('touchstart', e => {
   if (invOpen || chatOpen || paused) return;
   e.preventDefault();
@@ -4198,6 +4578,8 @@ lookZone.addEventListener('touchstart', e => {
   lookLastX = t.clientX; lookLastY = t.clientY;
   lookStartT = Date.now();
   lookMoved = false;
+  touchReticle.classList.add('active');
+  updateReticleAt(t.clientX, t.clientY);
 }, { passive: false });
 lookZone.addEventListener('touchmove', e => {
   const t = [...e.changedTouches].find(t => t.identifier === lookTouchId);
@@ -4208,6 +4590,7 @@ lookZone.addEventListener('touchmove', e => {
   lookLastX = t.clientX; lookLastY = t.clientY;
   player.yaw -= dx * TOUCH_LOOK_SENS;
   player.pitch = Math.max(-Math.PI/2+0.01, Math.min(Math.PI/2-0.01, player.pitch - dy * TOUCH_LOOK_SENS));
+  updateReticleAt(t.clientX, t.clientY);
   // Held long enough while barely moving = start mining (matches "tap and hold to mine")
   if (!lookMoved && Date.now() - lookStartT > TAP_MAX_MS) mHeld.l = true;
 }, { passive: false });
@@ -4217,15 +4600,23 @@ lookZone.addEventListener('touchend', e => {
   const heldMs = Date.now() - lookStartT;
   mHeld.l = false; // stop mining if it was active
   if (!lookMoved && heldMs <= TAP_MAX_MS) {
-    // Quick tap = "use" (mirrors desktop's right-click): open/close a door, use a bed, or place a block
-    const th = raycast();
-    if (th && DOOR_IDS.has(th.block)) tryToggleDoor();
-    else if (th && th.block === BED_ID) tryUseBed();
-    else placeBlock();
+    // Quick tap = "use" (mirrors desktop's right-click): trade with a villager, open/close a
+    // door, use a bed, or place a block
+    if (!tryUseVillager()) {
+      const th = raycast();
+      if (th && DOOR_IDS.has(th.block)) tryToggleDoor();
+      else if (th && th.block === BED_ID) tryUseBed();
+      else placeBlock();
+    }
   }
   lookTouchId = null;
+  mobileAimDir = null;
+  touchReticle.classList.remove('active', 'targeting');
 }, { passive: false });
-lookZone.addEventListener('touchcancel', () => { lookTouchId = null; mHeld.l = false; });
+lookZone.addEventListener('touchcancel', () => {
+  lookTouchId = null; mHeld.l = false; mobileAimDir = null;
+  touchReticle.classList.remove('active', 'targeting');
+});
 
 // ── Jump / Fly ──
 let lastJumpTapT = 0;
@@ -4271,13 +4662,34 @@ if (lobbyLeaveBtn) {
   });
 }
 
+// Shows a clear "connecting..." state on whichever button was pressed, so people don't think
+// the button is broken and mash it while Render's free server wakes up from sleep.
+function setConnectingState(connecting, errMsg) {
+  ['host-confirm', 'join-confirm'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    if (connecting) {
+      btn.dataset.origText = btn.dataset.origText || btn.textContent;
+      btn.textContent = '⏳ Connecting... (may take up to a minute)';
+      btn.disabled = true;
+    } else {
+      if (btn.dataset.origText) btn.textContent = btn.dataset.origText;
+      btn.disabled = false;
+    }
+  });
+  const hostErr = document.getElementById('host-err'), joinErr = document.getElementById('join-err');
+  if (errMsg) { if (hostErr) hostErr.textContent = errMsg; if (joinErr) joinErr.textContent = errMsg; }
+}
+
 document.getElementById('host-confirm').addEventListener('click', () => {
   const name = document.getElementById('host-name').value.trim();
   document.getElementById('host-err').textContent = '';
   if (!name) { document.getElementById('host-err').textContent = 'Please enter your name.'; return; }
   myName = name;
+  setConnectingState(true);
   connectSocket();
-  socket.emit('hostGame', { name, outfit: myOutfit });
+  if (socket.connected) { socket.emit('hostGame', { name, outfit: myOutfit }); setConnectingState(false); }
+  else socket.once('connect', () => socket.emit('hostGame', { name, outfit: myOutfit }));
 });
 
 document.getElementById('join-confirm').addEventListener('click', () => {
@@ -4296,8 +4708,10 @@ document.getElementById('join-confirm').addEventListener('click', () => {
     return;
   }
   myName = name;
+  setConnectingState(true);
   connectSocket();
-  socket.emit('joinGame', { code, name, outfit: myOutfit });
+  if (socket.connected) { socket.emit('joinGame', { code, name, outfit: myOutfit }); setConnectingState(false); }
+  else socket.once('connect', () => socket.emit('joinGame', { code, name, outfit: myOutfit }));
 });
 
 // Only allow digits in code field
@@ -4476,6 +4890,7 @@ function startFlappy() {
   }
 
   fc.addEventListener('click', flap);
+  fc.addEventListener('touchstart', (e) => { e.preventDefault(); flap(); }, { passive: false });
   // Space key flaps only when lobby is showing
   window._flap = flap;
 
