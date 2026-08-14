@@ -6,7 +6,7 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 body{background:#000;overflow:hidden;font-family:'Courier New',monospace;}
-#c{display:block;width:100vw;height:100vh;}
+#c{display:block;width:100vw;height:100vh;height:100dvh;}
 #ui{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;}
 #cross{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:white;font-size:26px;font-weight:bold;text-shadow:1px 1px 3px #000;pointer-events:none;}
 #hud{position:absolute;top:56px;left:8px;color:#fff;font-size:11px;text-shadow:1px 1px 2px #000;line-height:1.8;}
@@ -19,6 +19,8 @@ body{background:#000;overflow:hidden;font-family:'Courier New',monospace;}
 #hotbar-row{z-index:18;}
 #mobile-inv-dots{width:44px;height:44px;background:rgba(255,255,255,0.15);border:2px solid rgba(255,255,255,0.4);border-radius:6px;color:#fff;font-size:20px;display:none;align-items:center;justify-content:center;pointer-events:all;margin-left:4px;letter-spacing:1px;}
 body.mobile-mode #mobile-inv-dots{display:flex;}
+#mobile-chat-btn{width:44px;height:44px;background:rgba(255,255,255,0.15);border:2px solid rgba(255,255,255,0.4);border-radius:6px;color:#fff;font-size:16px;font-weight:bold;display:none;align-items:center;justify-content:center;pointer-events:all;margin-left:4px;}
+body.mobile-mode #mobile-chat-btn{display:flex;}
 .hs{width:52px;height:52px;background:rgba(60,60,60,0.88);border:2px solid #555;border-radius:3px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;}
 .hs.active{border-color:#fff;background:rgba(120,120,120,0.95);}
 .hs canvas{image-rendering:pixelated;}
@@ -162,11 +164,23 @@ body.mobile-mode #minimap:not(.big){bottom:auto;top:56px;right:10px;}
 .recipe-card{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.05);border:1px solid #444;border-radius:6px;padding:8px;margin-bottom:6px;}
 .recipe-ins{display:flex;align-items:center;gap:4px;flex-wrap:wrap;flex:1;font-size:10px;color:#ccc;}
 .recipe-ing{display:flex;align-items:center;gap:3px;background:rgba(0,0,0,0.3);border-radius:3px;padding:2px 6px;}
-.recipe-arrow{color:#888;font-size:16px;}
+.recipe-arrow{color:#888;font-size:22px;}
 .recipe-out{display:flex;align-items:center;gap:5px;font-size:11px;color:#fff;font-weight:bold;}
 .craft-btn{background:#3a6a2a;border:2px solid #5a9a3a;color:#fff;padding:6px 12px;border-radius:4px;font-size:10px;cursor:pointer;font-family:'Courier New',monospace;}
 .craft-btn:hover{background:#4a8a3a;}
 .mini-ic{width:20px;height:20px;border-radius:2px;flex-shrink:0;}
+
+/* ── Real 3x3 crafting table look ── */
+#craft-table{display:flex;align-items:center;justify-content:center;gap:10px;background:rgba(139,105,20,0.15);border:2px solid #6b4a1a;border-radius:8px;padding:14px;margin-bottom:8px;}
+#craft-grid{display:grid;grid-template-columns:repeat(3,44px);grid-template-rows:repeat(3,44px);gap:4px;}
+.craft-slot{width:44px;height:44px;background:rgba(0,0,0,0.35);border:2px solid #555;border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;}
+.craft-slot.filled{border-color:#8a8;background:rgba(122,154,90,0.2);}
+.craft-slot .cnt{position:absolute;bottom:1px;right:3px;font-size:9px;color:#fff;text-shadow:1px 1px 1px #000;font-weight:bold;}
+#craft-output{width:52px;height:52px;background:rgba(255,224,102,0.1);border:2px solid #ffe066;}
+#craft-output.empty{border-color:#555;background:rgba(0,0,0,0.35);cursor:default;}
+#craft-palette{display:grid;grid-template-columns:repeat(auto-fill,minmax(56px,1fr));gap:6px;max-height:32vh;overflow-y:auto;padding:6px 0;}
+.palette-item{background:rgba(60,60,60,0.6);border:2px solid #555;border-radius:4px;padding:4px 2px;text-align:center;font-size:8px;color:#ddd;cursor:pointer;}
+.palette-item:hover{border-color:#8a8;}
 
 /* ── Trading ── */
 #trade-screen .panel{max-height:80vh;overflow-y:auto;}
@@ -185,6 +199,27 @@ body.mobile-mode #minimap:not(.big){bottom:auto;top:56px;right:10px;}
   input{font-size:14px!important;padding:8px!important;}
   .set-row{padding:7px 0;font-size:11px;}
   #minimap-label{font-size:8px;}
+  /* Main menu */
+  #menuBtns{width:92vw;}
+  .mbtn{width:100%;box-sizing:border-box;}
+  /* Lobby: the 3-column desktop layout (player list | flappy bird | outfit) physically cannot
+     fit a phone's width — this was causing real overflow/clipping. Stack it vertically instead,
+     and let it scroll if the content is taller than the screen. */
+  #lobby-inner{flex-direction:column!important;width:94vw!important;height:auto!important;max-height:88vh;overflow-y:auto;align-items:center;}
+  #lobby-inner>div{width:100%!important;max-width:340px;box-sizing:border-box;}
+  #flappy-wrap{order:-1;}
+  #flappy{width:100%;height:auto;max-width:300px;}
+  #lobby-screen{padding-top:8px!important;overflow-y:auto;}
+  #lobby-screen h2{font-size:14px;margin-bottom:6px;}
+  /* Outfit builder + inventory grids also need to fit narrower */
+  .inv-page{max-height:50vh;}
+  #inv{width:96vw!important;padding:10px!important;}
+  #inv h2{font-size:13px;}
+  .inv-sec-btn{font-size:9px;padding:7px 2px;}
+  #craft-grid{grid-template-columns:repeat(3,36px);grid-template-rows:repeat(3,36px);}
+  .craft-slot{width:36px;height:36px;}
+  #craft-output{width:44px;height:44px;}
+  #armor-body,#craft-palette{grid-template-columns:repeat(auto-fill,minmax(50px,1fr));}
 }
 @media (max-height:480px){
   /* Landscape phone gameplay — short viewport, tighten everything vertically */
@@ -198,6 +233,10 @@ body.mobile-mode #minimap:not(.big){bottom:auto;top:56px;right:10px;}
   #gear-btn{width:30px;height:30px;font-size:14px;top:6px;left:6px;}
   body.mobile-mode #minimap:not(.big){top:6px;}
   #minimap canvas{width:70px!important;height:70px!important;}
+  /* Menus in landscape phone also need to fit a short viewport, not just a narrow one */
+  .screen{overflow-y:auto;padding:8px 0;}
+  .panel{max-height:82vh;overflow-y:auto;}
+  #lobby-inner{max-height:80vh;}
 }
 
 /* Always-visible settings gear (top-left) — works via click OR touch, on any device mode */
@@ -260,6 +299,7 @@ body.mobile-mode #cross{display:none;}
   <div id="hotbar-row" style="position:absolute;bottom:16px;left:50%;transform:translateX(-50%);display:flex;align-items:flex-end;">
     <div id="hotbar"></div>
     <div id="mobile-inv-dots">⋯</div>
+    <div id="mobile-chat-btn">T</div>
   </div>
   <div id="inv">
     <h2>⛏ INVENTORY</h2>
@@ -284,8 +324,14 @@ body.mobile-mode #cross{display:none;}
       <div id="armor-body"></div>
     </div>
     <div id="inv-page-crafting" class="inv-page" style="display:none;">
-      <input id="craft-srch" placeholder="Search recipes..." autocomplete="off">
-      <div id="craft-body"></div>
+      <div id="craft-table">
+        <div id="craft-grid"></div>
+        <div class="recipe-arrow">→</div>
+        <div id="craft-output" class="craft-slot"></div>
+      </div>
+      <p class="inv-hint">Tap an item below to add it to the grid. Tap a filled grid slot to remove it.</p>
+      <input id="craft-srch" placeholder="Search items..." autocomplete="off">
+      <div id="craft-palette"></div>
     </div>
     <button id="inv-close">Close [E]</button>
   </div>
@@ -1866,15 +1912,15 @@ const ITEM_CATEGORIES = {
     {id:202,label:'Lily Pad',color:'#228833',placeable:false},
     {id:203,label:'Vine',color:'#2a6a1a',placeable:false},
     {id:204,label:'Ladder',color:'#c8a048',placeable:false},
-    {id:205,label:'Torch',color:'#ffcc44',placeable:false,light:15},
+    {id:205,label:'Torch',color:'#ffcc44',placeable:true,light:15},
     {id:206,label:'Lantern',color:'#ffcc44',placeable:false,light:15},
     {id:207,label:'Campfire',color:'#ff8822',placeable:false,light:15},
     {id:208,label:'Snow Layer',color:'#eef5ff',placeable:false},
     {id:209,label:'Water',color:'#2266cc',placeable:true,transparent:true},
   ],
   'Functional': [
-    {id:210,label:'Iron Door',color:'#ccc',placeable:false},
-    {id:211,label:'Oak Door',color:'#c8a048',placeable:false},
+    {id:210,label:'Iron Door',color:'#ccc',placeable:true},
+    {id:211,label:'Oak Door',color:'#c8a048',placeable:true},
     {id:212,label:'Iron Bars',color:'#aaa',placeable:false},
     {id:213,label:'Glass Pane',color:'#aaddff',placeable:false,transparent:true},
     {id:214,label:'Fence',color:'#c8a048',placeable:false},
@@ -1883,7 +1929,7 @@ const ITEM_CATEGORIES = {
     {id:217,label:'Item Frame',color:'#c8a048',placeable:false},
     {id:218,label:'Armor Stand',color:'#888',placeable:false},
     // Decor-only blocks (village furniture — indestructible)
-    {id:219,label:'Bed (Red)',color:'#cc3333',placeable:false,decor:true},
+    {id:219,label:'Bed (Red)',color:'#cc3333',placeable:true,decor:true},
     {id:220,label:'Hay Bale (Decor)',color:'#ddbb33',placeable:false,decor:true},
   ],
   'Tools': [
@@ -2006,6 +2052,11 @@ const ITEM_CATEGORIES = {
     {id:425,label:'Iron Axe',color:'#ccc',placeable:false},
     {id:426,label:'Shears',color:'#ccc',placeable:false},
     {id:427,label:'Fishing Rod',color:'#8B6914',placeable:false},
+    // Internal-only "open door" states — never shown in the inventory (see hidden:true), used so an
+    // open door stays a real, raycastable block (you can click it again to close) instead of turning
+    // to air, which used to make a door unclickable forever after the first time you opened it.
+    {id:428,label:'Oak Door (Open)',color:'#c8a048',placeable:false,transparent:true,hidden:true},
+    {id:429,label:'Iron Door (Open)',color:'#ccc',placeable:false,transparent:true,hidden:true},
   ],
 };
 
@@ -2150,6 +2201,13 @@ class World{
         else if(y<10&&on<-0.6)bl=75;
         else if(y<15&&on<-0.55)bl=76;
         else if(y<8&&on<-0.5)bl=74;
+        // Emerald Ore was already in the code but the noise threshold above was so narrow it was
+        // essentially never encountered. Real Minecraft only generates it in mountains — do the
+        // same here, but with an actually-findable chance so players can genuinely mine it.
+        else if(bio===BIO.MOUNTAINS&&y>6&&y<H-3){
+          const emN=this.n4.n(wx*0.9+y*1.3,wz*0.9-y*1.1);
+          if(emN>0.72)bl=74;
+        }
         if(bio===BIO.MOUNTAINS&&y>H-8)bl=6;
         set(lx,y,lz,bl);
       }
@@ -2843,6 +2901,8 @@ canvas2.addEventListener('mousedown',e=>{
   if(e.button===2){
     mHeld.r=true;
     if(tryUseVillager())return;
+    if(tryUseTNT())return;
+    if(tryThrowEnderPearl())return;
     const hh=raycast();
     if(hh&&DOOR_IDS.has(hh.block))tryToggleDoor();
     else if(hh&&hh.block===BED_ID)tryUseBed();
@@ -2876,9 +2936,14 @@ function updatePhysics(dt){
     // Smooth vertical: Space=rise, Shift=sink, nothing=hover
     const wantVY=keys['Space']?FLYSPD*0.75:(keys['ShiftLeft']||keys['ShiftRight'])?-FLYSPD*0.75:0;
     player.vel.y+=(wantVY-player.vel.y)*Math.min(1,dt*11);
+    // Real collision on every axis now while flying — you used to only get stopped flying
+    // down into the ground; flying forward/sideways/up into a wall or ceiling used to just
+    // clip straight through. Same pCols/fSolid checks the walking branch already uses below.
     player.pos.x+=player.vel.x*dt;
-    player.pos.y+=player.vel.y*dt;
+    if(pCols(player.pos.x,player.pos.y,player.pos.z)||fSolid(player.pos.x,player.pos.y,player.pos.z)){player.pos.x-=player.vel.x*dt;player.vel.x=0;}
     player.pos.z+=player.vel.z*dt;
+    if(pCols(player.pos.x,player.pos.y,player.pos.z)||fSolid(player.pos.x,player.pos.y,player.pos.z)){player.pos.z-=player.vel.z*dt;player.vel.z=0;}
+    player.pos.y+=player.vel.y*dt;
     if(player.pos.y>=MAX_Y){player.pos.y=MAX_Y;player.vel.y=0;}
     if(player.pos.y<1){player.pos.y=1;player.vel.y=0;}
     // Sinking (Shift held) shouldn't let you clip through solid ground — but a real hole/cave
@@ -2886,6 +2951,11 @@ function updatePhysics(dt){
     if(player.vel.y<0&&fSolid(player.pos.x,player.pos.y,player.pos.z)){
       const gy=Math.floor(player.pos.y-player.height);
       player.pos.y=gy+player.height+1;
+      player.vel.y=0;
+    }
+    // Rising into a solid ceiling now stops you too, instead of clipping through.
+    if(player.vel.y>0&&pCols(player.pos.x,player.pos.y,player.pos.z)){
+      player.pos.y-=player.vel.y*dt;
       player.vel.y=0;
     }
   }else{
@@ -3100,6 +3170,45 @@ function getSelectedDamage(){
   if(!item||!item.damage)return 1;// fists deal 1 — always works
   return item.damage;
 }
+
+// ── Ender Pearl ── throw it (right-click/tap, like using a door), it arcs like a real thrown
+// item (affected by gravity, not a straight bow-shot), and teleports you to wherever it lands.
+const ENDER_PEARL_ID=382;
+const pearlList=[];
+let pearlCd=0;
+function tryThrowEnderPearl(){
+  if(player.selectedId!==ENDER_PEARL_ID)return false;
+  if(pearlCd>0)return true;// still counts as "used" so it doesn't fall through to placeBlock
+  pearlCd=0.6;
+  const dir=new THREE.Vector3(-Math.cos(player.pitch)*Math.sin(player.yaw),Math.sin(player.pitch),-Math.cos(player.pitch)*Math.cos(player.yaw));
+  const mesh=new THREE.Mesh(new THREE.SphereGeometry(0.09,8,8),new THREE.MeshLambertMaterial({color:0x2fae6f,emissive:0x0a3a22}));
+  mesh.position.copy(player.pos).addScaledVector(dir,0.6);
+  scene.add(mesh);
+  pearlList.push({mesh,vel:dir.clone().multiplyScalar(22),life:3});
+  SFX.bowShoot&&SFX.bowShoot();
+  return true;
+}
+function updateEnderPearls(dt){
+  pearlCd=Math.max(0,pearlCd-dt);
+  for(let i=pearlList.length-1;i>=0;i--){
+    const p=pearlList[i];
+    p.life-=dt;
+    p.vel.y-=18*dt;// gravity arc, unlike the flat-flying bow arrow
+    p.mesh.position.addScaledVector(p.vel,dt);
+    let landed=solidAt(p.mesh.position.x,p.mesh.position.y,p.mesh.position.z);
+    if(landed||p.life<=0){
+      scene.remove(p.mesh);
+      pearlList.splice(i,1);
+      if(landed){
+        // Teleport just above/before the impact point so you don't end up embedded in a block
+        player.pos.set(p.mesh.position.x,p.mesh.position.y+0.6,p.mesh.position.z);
+        player.vel.set(0,0,0);
+        SFX.doorOpen&&SFX.doorOpen();
+        showMsg('🌀 Teleported!');
+      }
+    }
+  }
+}
 function tryAttackMob(){
   const dir=new THREE.Vector3(-Math.cos(player.pitch)*Math.sin(player.yaw),Math.sin(player.pitch),-Math.cos(player.pitch)*Math.cos(player.yaw));
   for(const mob of mobList){
@@ -3131,10 +3240,8 @@ function performAttack(){
   else{tryAttackMob();tryAttackVillager();breakBlock();}
 }
 const EXPLODE_RADIUS=3.2;
-function explodeCreeper(mob){
-  const cx=Math.round(mob.mesh.position.x),cy=Math.round(mob.mesh.position.y),cz=Math.round(mob.mesh.position.z);
+function explodeAt(cx,cy,cz,r){
   SFX.explode();
-  const r=EXPLODE_RADIUS;
   for(let dx=-3;dx<=3;dx++)for(let dy=-3;dy<=3;dy++)for(let dz=-3;dz<=3;dz++){
     if(dx*dx+dy*dy+dz*dz>r*r)continue;
     const bx=cx+dx,by=cy+dy,bz=cz+dz;
@@ -3143,13 +3250,45 @@ function explodeCreeper(mob){
     if(!b||b===12)continue;// skip air & bedrock
     // Thin the destruction out toward the edge of the radius, like a real explosion
     if(Math.random()<0.25+0.6*(1-Math.sqrt(dx*dx+dy*dy+dz*dz)/r)){
+      // A TNT block caught in the blast chain-reacts instead of just vanishing
+      if(b===104){igniteTNT(bx,by,bz,0.15+Math.random()*0.2);continue;}
       world.setBlock(bx,by,bz,0);
       rebuildAround(bx,by,bz);
     }
   }
+}
+function explodeCreeper(mob){
+  const cx=Math.round(mob.mesh.position.x),cy=Math.round(mob.mesh.position.y),cz=Math.round(mob.mesh.position.z);
+  explodeAt(cx,cy,cz,EXPLODE_RADIUS);
   mob.alive=false;
   scene.remove(mob.mesh);
   if(mob.hpBarEl)mob.hpBarEl.remove();
+}
+// ── TNT ── right-click a placed TNT block to light it, same "use" pattern as doors/beds.
+const TNT_ID=104;
+const primedTNT=[];// {x,y,z,fuse}
+function igniteTNT(x,y,z,fuse=1.5){
+  if(primedTNT.some(t=>t.x===x&&t.y===y&&t.z===z))return;// already lit
+  primedTNT.push({x,y,z,fuse});
+}
+function tryUseTNT(){
+  const h=raycast();
+  if(!h||h.block!==TNT_ID)return false;
+  igniteTNT(h.x,h.y,h.z,1.5);
+  showMsg('💣 TNT lit!');
+  return true;
+}
+function updatePrimedTNT(dt){
+  for(let i=primedTNT.length-1;i>=0;i--){
+    const t=primedTNT[i];
+    t.fuse-=dt;
+    if(t.fuse<=0){
+      primedTNT.splice(i,1);
+      world.setBlock(t.x,t.y,t.z,0);
+      rebuildAround(t.x,t.y,t.z);
+      explodeAt(t.x,t.y,t.z,EXPLODE_RADIUS);
+    }
+  }
 }
 function updateMobs(dt){
   for(let i=mobList.length-1;i>=0;i--){
@@ -3200,22 +3339,31 @@ function updateMobs(dt){
     // Water column tops at SL=24, so getSurface returns 25 = SL+1.
     // Any tile where getSurface <= SL+1 is water — do NOT step there.
     const stepDist=0.9;
-    const stepX=mob.mesh.position.x+Math.sin(mob.wanderDir)*stepDist;
-    const stepZ=mob.mesh.position.z+Math.cos(mob.wanderDir)*stepDist;
-    const aheadSurf=world.getSurface(Math.floor(stepX),Math.floor(stepZ));
-    const wall=mobBlockedAt(Math.floor(stepX),Math.floor(stepZ),Math.round(mob.mesh.position.y-0.5));
-    const moving=aheadSurf>SL+1&&!wall;
-    if(!moving){
-      // Blocked by water or a wall — turn away instead of walking into it.
-      // avoidTimer briefly overrides the night-follow re-aim above, so a mob stuck at a wall
-      // actually turns and tries a new angle instead of snapping straight back at you every
-      // single frame (that instant re-aim was what caused mobs to visibly vibrate in place).
-      mob.wanderDir+=Math.PI*(0.9+Math.random()*0.2);
-      mob.wanderTimer=0.2+Math.random()*0.5;
-      mob.avoidTimer=0.5;
-    } else {
+    function checkAngle(ang){
+      const sx=mob.mesh.position.x+Math.sin(ang)*stepDist;
+      const sz=mob.mesh.position.z+Math.cos(ang)*stepDist;
+      const surf=world.getSurface(Math.floor(sx),Math.floor(sz));
+      const w=mobBlockedAt(Math.floor(sx),Math.floor(sz),Math.round(mob.mesh.position.y-0.5));
+      return surf>SL+1&&!w;
+    }
+    if(checkAngle(mob.wanderDir)){
       mob.mesh.position.x+=Math.sin(mob.wanderDir)*mob.type.speed*dt;
       mob.mesh.position.z+=Math.cos(mob.wanderDir)*mob.type.speed*dt;
+    } else {
+      // Blocked by water or a wall — try a handful of other angles (not just a blind 180°
+      // reversal) so a mob actually has a real chance of routing around a corner instead of
+      // endlessly bouncing straight back the way it came, then commit to whichever works for a
+      // while (avoidTimer) so night-follow doesn't immediately re-aim it right back into the
+      // same wall next frame — that immediate re-aim was what caused the visible shaking/vibrating.
+      const tryOffsets=[0.6,-0.6,1.2,-1.2,2.4,Math.PI];
+      let found=false;
+      for(const off of tryOffsets){
+        const cand=mob.wanderDir+off*Math.PI/1.6;
+        if(checkAngle(cand)){mob.wanderDir=cand;found=true;break;}
+      }
+      if(!found)mob.wanderDir+=Math.PI*(0.9+Math.random()*0.2);
+      mob.wanderTimer=0.3+Math.random()*0.4;
+      mob.avoidTimer=1.1;
     }
 
     // Surface Y update (every 0.35s) — rescue if somehow on water
@@ -3742,6 +3890,10 @@ function toggleInv(){
   document.getElementById('mobile-controls').style.visibility = invOpen ? 'hidden' : 'visible';
   if(invOpen){document.exitPointerLock();buildInvTabs();renderInv('');}
   else if(deviceMode==='computer')canvas2.requestPointerLock();
+  // Opening/closing a full-screen panel is exactly when iOS Safari's viewport tends to glitch —
+  // re-sync a beat later once the browser has actually finished reflowing.
+  setTimeout(syncViewportSize, 50);
+  setTimeout(syncViewportSize, 300);
 }
 document.getElementById('inv-close').addEventListener('click',toggleInv);
 document.getElementById('inv-srch').addEventListener('input',e=>renderInv(e.target.value));
@@ -3759,7 +3911,7 @@ function renderInv(q){
   const ql=q.toLowerCase();
   const cats=invCat==='All'?Object.entries(ITEM_CATEGORIES):[[invCat,ITEM_CATEGORIES[invCat]||[]]];
   cats.forEach(([cat,items])=>{
-    const filtered=items.filter(it=>!ql||it.label.toLowerCase().includes(ql));
+    const filtered=items.filter(it=>!it.hidden&&(!ql||it.label.toLowerCase().includes(ql)));
     if(!filtered.length)return;
     const sec=document.createElement('div');sec.className='inv-sec';
     if(invCat==='All'){const h=document.createElement('h3');h.textContent=cat;sec.appendChild(h);}
@@ -3869,33 +4021,69 @@ const RECIPES=[
   {out:414,outCount:1,label:'Diamond Leggings',ins:[{id:373,count:7}]},
   {out:415,outCount:1,label:'Diamond Boots',ins:[{id:373,count:4}]},
 ];
-function renderCraftScreen(q){
-  const body=document.getElementById('craft-body');body.innerHTML='';
-  const ql=(q||'').toLowerCase();
-  RECIPES.filter(r=>!ql||r.label.toLowerCase().includes(ql)).forEach(r=>{
-    const card=document.createElement('div');card.className='recipe-card';
-    const insWrap=document.createElement('div');insWrap.className='recipe-ins';
-    r.ins.forEach(ing=>{
-      const item=ITEM_BY_ID[ing.id];if(!item)return;
-      const w=document.createElement('div');w.className='recipe-ing';
-      w.appendChild(makeIcon(item,20));
-      const t=document.createElement('span');t.textContent='x'+ing.count;w.appendChild(t);
-      insWrap.appendChild(w);
-    });
-    const arrow=document.createElement('div');arrow.className='recipe-arrow';arrow.textContent='→';
-    const outItem=ITEM_BY_ID[r.out];
-    const outWrap=document.createElement('div');outWrap.className='recipe-out';
-    if(outItem)outWrap.appendChild(makeIcon(outItem,26));
-    const outLbl=document.createElement('span');outLbl.textContent=r.label+(r.outCount>1?' x'+r.outCount:'');outWrap.appendChild(outLbl);
-    const btn=document.createElement('button');btn.className='craft-btn';btn.textContent='Craft';
-    btn.addEventListener('click',()=>{
-      player.selectedId=r.out;hotbar[hotbarIdx]=r.out;buildHotbarUI();
-      document.getElementById('selD').textContent='📦 '+r.label;
-      showMsg('🔨 Crafted '+r.label);
+// A real 3x3 grid you place items into (tap a palette item to add it, tap a filled grid slot
+// to remove it) — matched against RECIPES.ins by total ingredient counts anywhere in the grid
+// (not exact shape/position — simpler and just as reliable on touch as a real drag gesture,
+// without needing separate drag-and-drop code paths for mouse vs. finger).
+let craftGrid=new Array(9).fill(null);// each slot: {id,label,count} or null
+function craftGridCounts(){
+  const counts={};
+  craftGrid.forEach(s=>{if(s)counts[s.id]=(counts[s.id]||0)+s.count;});
+  return counts;
+}
+function findMatchingRecipe(){
+  const counts=craftGridCounts();
+  return RECIPES.find(r=>r.ins.every(ing=>(counts[ing.id]||0)>=ing.count));
+}
+function renderCraftGrid(){
+  const gridEl=document.getElementById('craft-grid');gridEl.innerHTML='';
+  craftGrid.forEach((slot,i)=>{
+    const el=document.createElement('div');el.className='craft-slot'+(slot?' filled':'');
+    if(slot){
+      el.appendChild(makeIcon(itemOrFallback(slot),32));
+      if(slot.count>1){const c=document.createElement('span');c.className='cnt';c.textContent=slot.count;el.appendChild(c);}
+    }
+    el.addEventListener('click',()=>{craftGrid[i]=null;renderCraftGrid();});
+    gridEl.appendChild(el);
+  });
+  const outEl=document.getElementById('craft-output');outEl.innerHTML='';
+  const match=findMatchingRecipe();
+  outEl.classList.toggle('empty',!match);
+  if(match){
+    const outItem=ITEM_BY_ID[match.out];
+    if(outItem)outEl.appendChild(makeIcon(outItem,36));
+    outEl.onclick=()=>{
+      player.selectedId=match.out;hotbar[hotbarIdx]=match.out;buildHotbarUI();
+      showMsg('🔨 Crafted '+match.label);
       SFX.place&&SFX.place();
-    });
-    card.appendChild(insWrap);card.appendChild(arrow);card.appendChild(outWrap);card.appendChild(btn);
-    body.appendChild(card);
+    };
+  } else {
+    outEl.onclick=null;
+  }
+}
+function addToCraftGrid(item){
+  // Stack onto an existing slot with the same item first, otherwise use the next empty slot.
+  let idx=craftGrid.findIndex(s=>s&&s.id===item.id);
+  if(idx===-1)idx=craftGrid.findIndex(s=>!s);
+  if(idx===-1)return;// grid full
+  if(craftGrid[idx])craftGrid[idx].count++;
+  else craftGrid[idx]={id:item.id,label:item.label,count:1};
+  renderCraftGrid();
+}
+function renderCraftScreen(q){
+  renderCraftGrid();
+  const body=document.getElementById('craft-palette');body.innerHTML='';
+  const ql=(q||'').toLowerCase();
+  // Palette = every distinct ingredient used across all recipes, so you're picking from
+  // exactly what's actually craftable, not the entire item catalog.
+  const seen=new Set();
+  RECIPES.forEach(r=>r.ins.forEach(ing=>seen.add(ing.id)));
+  [...seen].map(id=>ITEM_BY_ID[id]).filter(it=>it&&(!ql||it.label.toLowerCase().includes(ql))).forEach(item=>{
+    const el=document.createElement('div');el.className='palette-item';
+    el.appendChild(makeIcon(item,28));
+    const lbl=document.createElement('div');lbl.textContent=item.label;el.appendChild(lbl);
+    el.addEventListener('click',()=>addToCraftGrid(item));
+    body.appendChild(el);
   });
 }
 document.getElementById('craft-srch').addEventListener('input',e=>renderCraftScreen(e.target.value));
@@ -4009,32 +4197,30 @@ function updateMinimap(dt){
 // ══════════════════════════════════════════════════
 // DOORS — right-click to open/close
 // ══════════════════════════════════════════════════
-const DOOR_IDS=new Set([210,211]);// Iron Door, Oak Door
-const openDoors=new Set();// "x,y,z" keys of open doors
+const DOOR_IDS=new Set([210,211]);// Iron Door, Oak Door (closed)
+const DOOR_OPEN_MAP={210:428,211:429};// closed id -> its open equivalent
+const DOOR_CLOSE_MAP={428:210,429:211};// open id -> its closed equivalent
+const ALL_DOOR_IDS=new Set([210,211,428,429]);
+function tryToggleDoor(){
+  const h=raycast();
+  if(!h)return;
+  if(!ALL_DOOR_IDS.has(h.block))return;
+  if(DOOR_OPEN_MAP[h.block]!==undefined){
+    world.setBlock(h.x,h.y,h.z,DOOR_OPEN_MAP[h.block]);// closed -> open
+    SFX.doorOpen();
+  } else {
+    world.setBlock(h.x,h.y,h.z,DOOR_CLOSE_MAP[h.block]);// open -> closed
+    SFX.doorClose();
+  }
+  rebuildAround(h.x,h.y,h.z);
+}
 const BED_ID=219;
-let sleeping=false,sleepSpeedMul=1;
+let sleeping=false;
 function tryUseBed(){
   const h=raycast();
   if(!h||h.block!==BED_ID)return;
   sleeping=!sleeping;
   showMsg(sleeping?'💤 Time speeding up... (right-click bed to stop)':'☀ Back to normal speed');
-}
-function tryToggleDoor(){
-  const h=raycast();
-  if(!h)return;
-  if(!DOOR_IDS.has(h.block))return;
-  const key=`${h.x},${h.y},${h.z}`;
-  if(openDoors.has(key)){
-    openDoors.delete(key);
-    world.setBlock(h.x,h.y,h.z,h.block);// restore door block
-    rebuildAround(h.x,h.y,h.z);
-    SFX.doorClose();
-  } else {
-    openDoors.add(key);
-    world.setBlock(h.x,h.y,h.z,0);// air = open
-    rebuildAround(h.x,h.y,h.z);
-    SFX.doorOpen();
-  }
 }
 
 // ══════════════════════════════════════════════════
@@ -4076,6 +4262,8 @@ function loop(t){
   if(mHeld.r&&plcCd===0)placeBlock();
   updatePhysics(dt);
   updateMobs(dt);
+  updatePrimedTNT(dt);
+  updateEnderPearls(dt);
   updateArrows(dt);
   updateVillagers(dt);
   updateDayNight(dt);
@@ -4428,6 +4616,8 @@ function closePause() {
   paused = false;
   showScreen(null);
   if (deviceMode === 'computer' && canvas2 && canvas2.requestPointerLock) canvas2.requestPointerLock();
+  setTimeout(syncViewportSize, 50);
+  setTimeout(syncViewportSize, 300);
 }
 document.getElementById('pause-resume').addEventListener('click', closePause);
 document.getElementById('pause-leave').addEventListener('click', () => {
@@ -4556,9 +4746,9 @@ joyBase.addEventListener('touchcancel', e => { joyEnd(e); });
 // pans the camera AND leaves a small reticle right where your finger is, and whatever that
 // reticle is over is what tap/hold acts on (no fixed center crosshair on mobile). ──
 const touchReticle = document.getElementById('touch-reticle');
-let lookTouchId = null, lookLastX = 0, lookLastY = 0, lookStartT = 0, lookMoved = false;
+let lookTouchId = null, lookLastX = 0, lookLastY = 0, lookStartT = 0, lookMoved = false, lookHoldTimer = null;
 const TOUCH_LOOK_SENS = 0.0055;
-const TAP_MAX_MS = 220, TAP_MAX_MOVE = 12;
+const TAP_MAX_MS = 180, TAP_MAX_MOVE = 12;// was 220ms — also now backed by a real timer, not touchmove jitter (see below)
 const _reticleRaycaster = new THREE.Raycaster();
 function updateReticleAt(sx, sy){
   touchReticle.style.left = sx + 'px';
@@ -4580,6 +4770,11 @@ lookZone.addEventListener('touchstart', e => {
   lookMoved = false;
   touchReticle.classList.add('active');
   updateReticleAt(t.clientX, t.clientY);
+  // BUG FIX: mining used to only start inside the touchmove handler below, so holding your
+  // finger perfectly still (no jitter at all) could take a long time to register, or never
+  // start — a real setTimeout fires reliably regardless of whether the finger moves at all.
+  if (lookHoldTimer) clearTimeout(lookHoldTimer);
+  lookHoldTimer = setTimeout(() => { if (!lookMoved) mHeld.l = true; }, TAP_MAX_MS);
 }, { passive: false });
 lookZone.addEventListener('touchmove', e => {
   const t = [...e.changedTouches].find(t => t.identifier === lookTouchId);
@@ -4591,18 +4786,17 @@ lookZone.addEventListener('touchmove', e => {
   player.yaw -= dx * TOUCH_LOOK_SENS;
   player.pitch = Math.max(-Math.PI/2+0.01, Math.min(Math.PI/2-0.01, player.pitch - dy * TOUCH_LOOK_SENS));
   updateReticleAt(t.clientX, t.clientY);
-  // Held long enough while barely moving = start mining (matches "tap and hold to mine")
-  if (!lookMoved && Date.now() - lookStartT > TAP_MAX_MS) mHeld.l = true;
 }, { passive: false });
 lookZone.addEventListener('touchend', e => {
   const t = [...e.changedTouches].find(t => t.identifier === lookTouchId);
   if (!t) return;
+  if (lookHoldTimer) { clearTimeout(lookHoldTimer); lookHoldTimer = null; }
   const heldMs = Date.now() - lookStartT;
   mHeld.l = false; // stop mining if it was active
   if (!lookMoved && heldMs <= TAP_MAX_MS) {
-    // Quick tap = "use" (mirrors desktop's right-click): trade with a villager, open/close a
-    // door, use a bed, or place a block
-    if (!tryUseVillager()) {
+    // Quick tap = "use" (mirrors desktop's right-click): trade with a villager, light TNT,
+    // open/close a door, use a bed, or place a block
+    if (!tryUseVillager() && !tryUseTNT() && !tryThrowEnderPearl()) {
       const th = raycast();
       if (th && DOOR_IDS.has(th.block)) tryToggleDoor();
       else if (th && th.block === BED_ID) tryUseBed();
@@ -4614,6 +4808,7 @@ lookZone.addEventListener('touchend', e => {
   touchReticle.classList.remove('active', 'targeting');
 }, { passive: false });
 lookZone.addEventListener('touchcancel', () => {
+  if (lookHoldTimer) { clearTimeout(lookHoldTimer); lookHoldTimer = null; }
   lookTouchId = null; mHeld.l = false; mobileAimDir = null;
   touchReticle.classList.remove('active', 'targeting');
 });
@@ -4652,6 +4847,8 @@ flyDownBtn.addEventListener('touchend', e => { e.preventDefault(); keys['ShiftLe
 
 // ── Mobile "..." button opens the same full inventory as desktop's E key ──
 mobileInvDots.addEventListener('click', toggleInv);
+// ── Mobile "T" button opens chat, same as pressing T on desktop ──
+document.getElementById('mobile-chat-btn').addEventListener('click', () => { if (started && !chatOpen) openChat(); });
 
 // Leave from the lobby (before the game has started) — just disconnects and resets.
 const lobbyLeaveBtn = document.getElementById('lobby-leave-btn');
@@ -5134,12 +5331,38 @@ function launchWorldLoad() {
   setTimeout(nextBatch, 50);
 }
 
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth/window.innerHeight;
+// ══════════════════════════════════════════════════
+// VIEWPORT SYNC — mobile Safari (especially iPhone) doesn't reliably fire a normal 'resize'
+// event when its address bar hides/shows, the keyboard opens/closes, or a full-screen panel
+// like the inventory opens — window.innerWidth/innerHeight can end up stale in those moments.
+// That stale value gets baked into the canvas as an inline pixel size (which overrides the
+// #c{width:100vw;height:100dvh} CSS rule), producing exactly the "small game view + black
+// space" and "stretched/skewed view" bugs. window.visualViewport is the API built specifically
+// to track the *actual* visible area reliably on mobile, so we prefer it when available, and we
+// re-sync defensively at every moment known to disturb layout on iOS, not just on 'resize'.
+function syncViewportSize(){
+  const vv = window.visualViewport;
+  const w = vv ? Math.round(vv.width) : window.innerWidth;
+  const h = vv ? Math.round(vv.height) : window.innerHeight;
+  if (w < 50 || h < 50) return; // ignore bogus mid-transition readings
+  camera.aspect = w / h;
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  wCanvas.width = window.innerWidth; wCanvas.height = window.innerHeight;
+  renderer.setSize(w, h);
+  if (typeof wCanvas !== 'undefined' && wCanvas) { wCanvas.width = w; wCanvas.height = h; }
+}
+window.addEventListener('resize', syncViewportSize);
+window.addEventListener('orientationchange', () => {
+  syncViewportSize();
+  setTimeout(syncViewportSize, 150);
+  setTimeout(syncViewportSize, 500); // iOS can settle its chrome late after a rotation
 });
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', syncViewportSize);
+  window.visualViewport.addEventListener('scroll', syncViewportSize);
+}
+// Catch initial-load timing issues (iOS Safari's chrome isn't always settled on first paint)
+setTimeout(syncViewportSize, 300);
+setTimeout(syncViewportSize, 1000);
 requestAnimationFrame(loop);
 </script>
 </body>
