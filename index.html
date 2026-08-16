@@ -2156,6 +2156,7 @@ class World{
   }
   key(cx,cz){return cx+','+cz;}
   getChunk(cx,cz){const k=this.key(cx,cz);if(!this.chunks.has(k))this.gen(cx,cz);return this.chunks.get(k);}
+  hasChunk(cx,cz){return this.chunks.has(this.key(cx,cz));}
   biomeAt(wx,wz){
     const b=this.n3.oct(wx/300,wz/300,3,0.5);
     const t=this.n1.oct(wx/250,wz/250,2,0.5);
@@ -2532,10 +2533,21 @@ function updateTorchLights(dt){
   const px=Math.floor(player.pos.x),py=Math.floor(player.pos.y),pz=Math.floor(player.pos.z);
   const found=[];
   const R=11;
-  for(let dx=-R;dx<=R;dx++)for(let dz=-R;dz<=R;dz++)for(let dy=-6;dy<=6;dy++){
-    if(found.length>=TORCH_LIGHT_COUNT*3)break;
-    if(world.getBlock(px+dx,py+dy,pz+dz)===205){
-      found.push({x:px+dx+0.5,y:py+dy+0.6,z:pz+dz+0.5,d:dx*dx+dy*dy+dz*dz});
+  const need=TORCH_LIGHT_COUNT*3;
+  outer:
+  for(let dx=-R;dx<=R;dx++)for(let dz=-R;dz<=R;dz++){
+    // BUG FIX: this used to call world.getBlock() unconditionally, which silently forces full
+    // (expensive) terrain generation for any chunk it touches that hasn't loaded yet — that was
+    // the real cause of the "plays fine, then freezes a few seconds after you start walking"
+    // bug, since exploring into fresh territory kept triggering hidden chunk generation every
+    // half-second. Only ever scan chunks that are already generated.
+    const cx=Math.floor((px+dx)/CS),cz=Math.floor((pz+dz)/CS);
+    if(!world.hasChunk(cx,cz))continue;
+    for(let dy=-6;dy<=6;dy++){
+      if(found.length>=need)break outer;// was only breaking the dy loop before — real fix now
+      if(world.getBlock(px+dx,py+dy,pz+dz)===205){
+        found.push({x:px+dx+0.5,y:py+dy+0.6,z:pz+dz+0.5,d:dx*dx+dy*dy+dz*dz});
+      }
     }
   }
   found.sort((a,b)=>a.d-b.d);
@@ -4161,6 +4173,17 @@ function updateMinimap(dt){
   for(let mx=0;mx<sz;mx++)for(let mz=0;mz<sz;mz++){
     const wx=px2+Math.floor((mx/sz-0.5)*range);
     const wz=pz2+Math.floor((mz/sz-0.5)*range);
+    // BUG FIX: this used to call world.getSurface()/biomeAt() for every pixel unconditionally,
+    // which silently force-generates full terrain for any not-yet-loaded chunk it touches. The
+    // minimap's range (up to 170 blocks) reaches FAR past what's actually been explored, so this
+    // was triggering enormous amounts of hidden, expensive world generation up to 4x a second —
+    // the real cause of "plays fine, then freezes a few seconds after you start walking/looking
+    // at the map." Unexplored areas now just render as fog instead of forcing generation.
+    const ccx=Math.floor(wx/CS),ccz=Math.floor(wz/CS);
+    if(!world.hasChunk(ccx,ccz)){
+      mmCtx.fillStyle='#1a1a1a';mmCtx.globalAlpha=0.85;mmCtx.fillRect(mx,mz,1,1);
+      continue;
+    }
     const surf=world.getSurface(wx,wz);
     const bio=world.biomeAt(wx,wz);
     let col=BIOME_COLS[bio]||'#5a7a2a';
@@ -4268,49 +4291,76 @@ function loop(t){
   if(!started||paused)return;
   const dt=Math.min((t-lastT)/1000,0.05);
   lastT=t;
-  brkCd=Math.max(0,brkCd-dt);plcCd=Math.max(0,plcCd-dt);arrowCd=Math.max(0,arrowCd-dt);
-  if(mHeld.l&&brkCd===0){performAttack();}
-  if(mHeld.r&&plcCd===0)placeBlock();
-  updatePhysics(dt);
-  updateMobs(dt);
-  updatePrimedTNT(dt);
-  updateEnderPearls(dt);
-  updateArrows(dt);
-  updateVillagers(dt);
-  updateDayNight(dt);
-  updateWeather(dt);
-  updateTorchLights(dt);
-  updateMinimap(dt);
-  updateRemotePlayers(dt);
-  broadcastPosition(dt);
-  processChunkQueue();
-  // Queue new chunks when player enters new chunk
-  const cx=Math.floor(player.pos.x/CS),cz=Math.floor(player.pos.z/CS);
-  if(cx!==lastCX||cz!==lastCZ){
-    lastCX=cx;lastCZ=cz;
-    // Queue needed chunks
-    const need=new Set();
-    for(let dx=-RENDER_R;dx<=RENDER_R;dx++)for(let dz=-RENDER_R;dz<=RENDER_R;dz++){
-      if(dx*dx+dz*dz<=RENDER_R*RENDER_R){
-        const k=(cx+dx)+','+(cz+dz);need.add(k);
-        if(!chunkMeshes.has(k))queueChunk(cx+dx,cz+dz);
+  try{
+    brkCd=Math.max(0,brkCd-dt);plcCd=Math.max(0,plcCd-dt);arrowCd=Math.max(0,arrowCd-dt);
+    if(mHeld.l&&brkCd===0){performAttack();}
+    if(mHeld.r&&plcCd===0)placeBlock();
+    updatePhysics(dt);
+    updateMobs(dt);
+    updatePrimedTNT(dt);
+    updateEnderPearls(dt);
+    updateArrows(dt);
+    updateVillagers(dt);
+    updateDayNight(dt);
+    updateWeather(dt);
+    updateTorchLights(dt);
+    updateMinimap(dt);
+    updateRemotePlayers(dt);
+    broadcastPosition(dt);
+    processChunkQueue();
+    // Queue new chunks when player enters new chunk
+    const cx=Math.floor(player.pos.x/CS),cz=Math.floor(player.pos.z/CS);
+    if(cx!==lastCX||cz!==lastCZ){
+      lastCX=cx;lastCZ=cz;
+      // Queue needed chunks
+      const need=new Set();
+      for(let dx=-RENDER_R;dx<=RENDER_R;dx++)for(let dz=-RENDER_R;dz<=RENDER_R;dz++){
+        if(dx*dx+dz*dz<=RENDER_R*RENDER_R){
+          const k=(cx+dx)+','+(cz+dz);need.add(k);
+          if(!chunkMeshes.has(k))queueChunk(cx+dx,cz+dz);
+        }
       }
+      // Remove far chunks — dispose their per-chunk instance buffers too, not just detach from
+      // the scene, so this doesn't slowly leak GPU memory as you walk around and chunks stream
+      // in/out (each chunk's InstancedMesh has its own instance-matrix buffer, not shared).
+      chunkMeshes.forEach((meshes,k)=>{
+        if(!need.has(k)){
+          meshes.forEach(m=>{scene.remove(m);if(m.dispose)m.dispose();if(m.geometry&&m.geometry!==BOX_GEO)m.geometry.dispose();});
+          chunkMeshes.delete(k);
+        }
+      });
     }
-    // Remove far chunks immediately
-    chunkMeshes.forEach((_,k)=>{if(!need.has(k)){chunkMeshes.get(k).forEach(m=>scene.remove(m));chunkMeshes.delete(k);}});
+    // Village gen
+    villageT+=dt;if(villageT>20){villageT=0;// check every 20s (pre-built at load, this is just for new areas)
+      const ax=Math.floor(player.pos.x/120),az=Math.floor(player.pos.z/120);
+      generatingWorld=true;
+      for(let dx=-2;dx<=2;dx++)for(let dz=-2;dz<=2;dz++)tryBuildVillage(ax+dx,az+dz);
+      generatingWorld=false;
+    }
+    const hit=raycast();
+    if(hit){hlMesh.position.set(hit.x+0.5,hit.y+0.5,hit.z+0.5);hlMesh.visible=true;}
+    else hlMesh.visible=false;
+    if(msgT>0){msgT-=dt;if(msgT<=0)document.getElementById('flyD').textContent=(player.flying?'✈ Flying':'🚶 Walking');}
+  }catch(err){
+    // A bug in any one system (mobs, chunks, weather, whatever) used to be able to silently
+    // freeze the whole game on a stuck frame forever, with zero indication of what happened.
+    // Now: show exactly what broke right on screen so it's immediately fixable instead of a
+    // guessing game, and keep rendering below regardless so the screen never just freezes on a
+    // dead frame again.
+    showErrorOverlay(err);
   }
-  // Village gen
-  villageT+=dt;if(villageT>20){villageT=0;// check every 20s (pre-built at load, this is just for new areas)
-    const ax=Math.floor(player.pos.x/120),az=Math.floor(player.pos.z/120);
-    generatingWorld=true;
-    for(let dx=-2;dx<=2;dx++)for(let dz=-2;dz<=2;dz++)tryBuildVillage(ax+dx,az+dz);
-    generatingWorld=false;
-  }
-  const hit=raycast();
-  if(hit){hlMesh.position.set(hit.x+0.5,hit.y+0.5,hit.z+0.5);hlMesh.visible=true;}
-  else hlMesh.visible=false;
-  if(msgT>0){msgT-=dt;if(msgT<=0)document.getElementById('flyD').textContent=(player.flying?'✈ Flying':'🚶 Walking');}
   renderer.render(scene,camera);
+}
+function showErrorOverlay(err){
+  let el=document.getElementById('err-overlay');
+  if(!el){
+    el=document.createElement('div');
+    el.id='err-overlay';
+    el.style.cssText='position:fixed;bottom:8px;left:8px;right:8px;max-height:40vh;overflow-y:auto;background:rgba(120,0,0,0.92);color:#fff;font-family:monospace;font-size:11px;padding:10px;border-radius:6px;z-index:9999;white-space:pre-wrap;';
+    document.body.appendChild(el);
+  }
+  const msg='⚠ Game error (report this text): '+(err&&err.message||err)+'\n'+(err&&err.stack||'');
+  if(el.textContent!==msg)el.textContent=msg;
 }
 
 // ══════════════════════════════════════════════════
