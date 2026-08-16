@@ -2,10 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Block World Creative</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{background:#000;overflow:hidden;font-family:'Courier New',monospace;}
+html,body{width:100%;height:100%;overflow:hidden;}
+body{background:#000;font-family:'Courier New',monospace;position:fixed;inset:0;}
 #c{display:block;width:100vw;height:100vh;height:100dvh;}
 #ui{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;}
 #cross{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:white;font-size:26px;font-weight:bold;text-shadow:1px 1px 3px #000;pointer-events:none;}
@@ -299,7 +301,7 @@ body.mobile-mode #cross{display:none;}
     <canvas id="mmcanvas" width="100" height="100" style="width:100px;height:100px;"></canvas>
     <div id="minimap-label">🗺 MAP [M]</div>
   </div>
-  <div id="hotbar-row" style="position:absolute;bottom:16px;left:50%;transform:translateX(-50%);display:flex;align-items:flex-end;">
+  <div id="hotbar-row" style="position:absolute;bottom:calc(16px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:flex;align-items:flex-end;">
     <div id="hotbar"></div>
     <div id="mobile-inv-dots">⋯</div>
     <div id="mobile-chat-btn">T</div>
@@ -3361,6 +3363,7 @@ function updateMobs(dt){
     // Water column tops at SL=24, so getSurface returns 25 = SL+1.
     // Any tile where getSurface <= SL+1 is water — do NOT step there.
     const stepDist=0.9;
+    let moving=false;
     function checkAngle(ang){
       const sx=mob.mesh.position.x+Math.sin(ang)*stepDist;
       const sz=mob.mesh.position.z+Math.cos(ang)*stepDist;
@@ -3371,6 +3374,7 @@ function updateMobs(dt){
     if(checkAngle(mob.wanderDir)){
       mob.mesh.position.x+=Math.sin(mob.wanderDir)*mob.type.speed*dt;
       mob.mesh.position.z+=Math.cos(mob.wanderDir)*mob.type.speed*dt;
+      moving=true;
     } else {
       // Blocked by water or a wall — try a handful of other angles (not just a blind 180°
       // reversal) so a mob actually has a real chance of routing around a corner instead of
@@ -3430,6 +3434,7 @@ function updateMobs(dt){
   if(Math.random()<0.018&&mobList.length<32){
     const ang=Math.random()*Math.PI*2,d=22+Math.random()*18;
     const x=player.pos.x+Math.cos(ang)*d,z=player.pos.z+Math.sin(ang)*d;
+    if(!world.hasChunk(Math.floor(x/CS),Math.floor(z/CS)))return;// don't force-generate just to spawn a mob
     const surf=world.getSurface(Math.floor(x),Math.floor(z));
     if(surf<=SL+1)return;
     const pool=isDay?[4,5,6,7]:[0,1,2,3];
@@ -4291,28 +4296,36 @@ function loop(t){
   if(!started||paused)return;
   const dt=Math.min((t-lastT)/1000,0.05);
   lastT=t;
-  try{
+  // IMPORTANT: each system below runs in its OWN try/catch. Before, one shared try/catch wrapped
+  // everything — which meant a single bug in, say, updateMobs would throw and skip every single
+  // thing listed after it for the rest of the game (chunks never loading, weather/rain frozen,
+  // the block-break highlight never updating, the minimap never refreshing) even though none of
+  // those systems were actually broken themselves. That silent cascade was the real cause behind
+  // several reported bugs turning out to all be the same one error. Isolating each call means a
+  // future bug in any one system stays contained to that system, on screen, immediately.
+  safeCall('input', () => {
     brkCd=Math.max(0,brkCd-dt);plcCd=Math.max(0,plcCd-dt);arrowCd=Math.max(0,arrowCd-dt);
     if(mHeld.l&&brkCd===0){performAttack();}
     if(mHeld.r&&plcCd===0)placeBlock();
-    updatePhysics(dt);
-    updateMobs(dt);
-    updatePrimedTNT(dt);
-    updateEnderPearls(dt);
-    updateArrows(dt);
-    updateVillagers(dt);
-    updateDayNight(dt);
-    updateWeather(dt);
-    updateTorchLights(dt);
-    updateMinimap(dt);
-    updateRemotePlayers(dt);
-    broadcastPosition(dt);
+  });
+  safeCall('physics', () => updatePhysics(dt));
+  safeCall('mobs', () => updateMobs(dt));
+  safeCall('tnt', () => updatePrimedTNT(dt));
+  safeCall('pearls', () => updateEnderPearls(dt));
+  safeCall('arrows', () => updateArrows(dt));
+  safeCall('villagers', () => updateVillagers(dt));
+  safeCall('daynight', () => updateDayNight(dt));
+  safeCall('weather', () => updateWeather(dt));
+  safeCall('torches', () => updateTorchLights(dt));
+  safeCall('minimap', () => updateMinimap(dt));
+  safeCall('remoteplayers', () => updateRemotePlayers(dt));
+  safeCall('broadcast', () => broadcastPosition(dt));
+  safeCall('chunks', () => {
     processChunkQueue();
     // Queue new chunks when player enters new chunk
     const cx=Math.floor(player.pos.x/CS),cz=Math.floor(player.pos.z/CS);
     if(cx!==lastCX||cz!==lastCZ){
       lastCX=cx;lastCZ=cz;
-      // Queue needed chunks
       const need=new Set();
       for(let dx=-RENDER_R;dx<=RENDER_R;dx++)for(let dz=-RENDER_R;dz<=RENDER_R;dz++){
         if(dx*dx+dz*dz<=RENDER_R*RENDER_R){
@@ -4321,8 +4334,7 @@ function loop(t){
         }
       }
       // Remove far chunks — dispose their per-chunk instance buffers too, not just detach from
-      // the scene, so this doesn't slowly leak GPU memory as you walk around and chunks stream
-      // in/out (each chunk's InstancedMesh has its own instance-matrix buffer, not shared).
+      // the scene, so this doesn't slowly leak GPU memory as you walk around and chunks stream in/out.
       chunkMeshes.forEach((meshes,k)=>{
         if(!need.has(k)){
           meshes.forEach(m=>{scene.remove(m);if(m.dispose)m.dispose();if(m.geometry&&m.geometry!==BOX_GEO)m.geometry.dispose();});
@@ -4330,28 +4342,30 @@ function loop(t){
         }
       });
     }
-    // Village gen
-    villageT+=dt;if(villageT>20){villageT=0;// check every 20s (pre-built at load, this is just for new areas)
+  });
+  safeCall('villagegen', () => {
+    villageT+=dt;if(villageT>20){villageT=0;
       const ax=Math.floor(player.pos.x/120),az=Math.floor(player.pos.z/120);
       generatingWorld=true;
       for(let dx=-2;dx<=2;dx++)for(let dz=-2;dz<=2;dz++)tryBuildVillage(ax+dx,az+dz);
       generatingWorld=false;
     }
+  });
+  safeCall('highlight', () => {
     const hit=raycast();
     if(hit){hlMesh.position.set(hit.x+0.5,hit.y+0.5,hit.z+0.5);hlMesh.visible=true;}
     else hlMesh.visible=false;
+  });
+  safeCall('msgtimer', () => {
     if(msgT>0){msgT-=dt;if(msgT<=0)document.getElementById('flyD').textContent=(player.flying?'✈ Flying':'🚶 Walking');}
-  }catch(err){
-    // A bug in any one system (mobs, chunks, weather, whatever) used to be able to silently
-    // freeze the whole game on a stuck frame forever, with zero indication of what happened.
-    // Now: show exactly what broke right on screen so it's immediately fixable instead of a
-    // guessing game, and keep rendering below regardless so the screen never just freezes on a
-    // dead frame again.
-    showErrorOverlay(err);
-  }
+  });
   renderer.render(scene,camera);
 }
-function showErrorOverlay(err){
+function safeCall(label,fn){
+  try{ fn(); }
+  catch(err){ showErrorOverlay(err,label); }
+}
+function showErrorOverlay(err,label){
   let el=document.getElementById('err-overlay');
   if(!el){
     el=document.createElement('div');
@@ -4359,7 +4373,7 @@ function showErrorOverlay(err){
     el.style.cssText='position:fixed;bottom:8px;left:8px;right:8px;max-height:40vh;overflow-y:auto;background:rgba(120,0,0,0.92);color:#fff;font-family:monospace;font-size:11px;padding:10px;border-radius:6px;z-index:9999;white-space:pre-wrap;';
     document.body.appendChild(el);
   }
-  const msg='⚠ Game error (report this text): '+(err&&err.message||err)+'\n'+(err&&err.stack||'');
+  const msg='⚠ Game error in ['+(label||'?')+'] (report this text): '+(err&&err.message||err)+'\n'+(err&&err.stack||'');
   if(el.textContent!==msg)el.textContent=msg;
 }
 
