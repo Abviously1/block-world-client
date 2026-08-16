@@ -241,6 +241,8 @@ body.mobile-mode #minimap:not(.big){bottom:auto;top:56px;right:10px;}
 
 /* Always-visible settings gear (top-left) — works via click OR touch, on any device mode */
 #gear-btn{position:absolute;top:10px;left:10px;width:38px;height:38px;background:rgba(0,0,0,0.55);border:2px solid rgba(255,255,255,0.35);border-radius:50%;color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;pointer-events:all;z-index:25;user-select:none;-webkit-user-select:none;touch-action:manipulation;}
+#click-to-play{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.45);color:#fff;font-size:22px;font-weight:bold;text-shadow:1px 1px 3px #000;display:none;align-items:center;justify-content:center;pointer-events:all;cursor:pointer;z-index:22;font-family:'Courier New',monospace;}
+body.mobile-mode #click-to-play{display:none!important;}
 #gear-btn:active{background:rgba(0,0,0,0.8);}
 
 /* Settings screen */
@@ -281,6 +283,7 @@ body.mobile-mode #cross{display:none;}
 <canvas id="skycanvas"></canvas>
 <div id="ui">
   <div id="gear-btn">⚙</div>
+  <div id="click-to-play">🖱 Click to play</div>
   <div id="cross">+</div>
   <div id="darkoverlay"></div>
   <div id="hitflash"></div>
@@ -2888,7 +2891,14 @@ document.addEventListener('keyup',e=>{
   if(e.code==='ShiftLeft'||e.code==='ShiftRight')lastShiftUp=Date.now();
 });
 canvas2.addEventListener('click',()=>{if(!locked&&!invOpen)canvas2.requestPointerLock();});
-document.addEventListener('pointerlockchange',()=>{locked=document.pointerLockElement===canvas2;});
+document.addEventListener('pointerlockchange',()=>{
+  locked=document.pointerLockElement===canvas2;
+  const el=document.getElementById('click-to-play');
+  if(locked&&el)el.style.display='none';
+});
+document.getElementById('click-to-play').addEventListener('click',()=>{
+  if(!invOpen)canvas2.requestPointerLock();
+});
 document.addEventListener('mousemove',e=>{
   if(!locked)return;
   player.yaw-=e.movementX*0.002;
@@ -3885,6 +3895,7 @@ let invCat='All';
 function toggleInv(){
   invOpen=!invOpen;
   document.getElementById('inv').classList.toggle('open',invOpen);
+  if(invOpen){const c2p=document.getElementById('click-to-play');if(c2p)c2p.style.display='none';}
   // The full-screen touch look/joystick layer would otherwise sit on top of the inventory
   // panel and swallow every tap meant for it — hide it while the inventory is open.
   document.getElementById('mobile-controls').style.visibility = invOpen ? 'hidden' : 'visible';
@@ -4608,6 +4619,7 @@ document.getElementById('join-back').addEventListener('click', () => showScreen(
 function openPause() {
   paused = true;
   if (document.exitPointerLock) document.exitPointerLock();
+  const c2p=document.getElementById('click-to-play');if(c2p)c2p.style.display='none';
   document.getElementById('pause-code-val').textContent = myRoomCode || '-------';
   document.getElementById('pause-leave-label').textContent = isHost ? 'End Game' : 'Leave Game';
   showScreen('pause-screen');
@@ -5318,17 +5330,37 @@ function launchWorldLoad() {
         loadEl.style.display = 'none';
         started = true;
         buildHotbarUI(); buildInvTabs(); renderInv('');
-        canvas2.requestPointerLock();
         lastT = performance.now();
         // Build remote player meshes for everyone in the room
         if (socket && socket.connected) {
           // Re-request lobby state so we have all players
           socket.emit('requestLobbyState');
         }
+        // Auto pointer-lock only on computer — and only best-effort: by the time we get here
+        // we're several seconds and multiple async steps past the "Start Game" click, which
+        // browsers can (and often do) treat as too far from a real user gesture to allow
+        // silently. When that happens the request used to just fail with no explanation —
+        // the game LOOKED frozen/paused because mouse-look never engages, even though
+        // everything underneath was actually running fine. Now we catch that and show a
+        // clear "click to play" prompt instead of leaving it silently broken.
+        if (deviceMode === 'computer' && canvas2 && canvas2.requestPointerLock) {
+          try {
+            const p = canvas2.requestPointerLock();
+            if (p && typeof p.catch === 'function') p.catch(() => showClickToPlayPrompt());
+            setTimeout(() => { if (!locked) showClickToPlayPrompt(); }, 400);
+          } catch (e) {
+            showClickToPlayPrompt();
+          }
+        }
       }, 300);
     }
   }
   setTimeout(nextBatch, 50);
+}
+function showClickToPlayPrompt(){
+  if (locked || deviceMode !== 'computer') return;
+  const el = document.getElementById('click-to-play');
+  if (el) el.style.display = 'flex';
 }
 
 // ══════════════════════════════════════════════════
