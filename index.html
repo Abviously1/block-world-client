@@ -19,6 +19,8 @@ body{background:#000;font-family:'Courier New',monospace;position:fixed;inset:0;
 /* Hotbar */
 #hotbar{display:flex;gap:3px;}
 #hotbar-row{z-index:18;}
+#survbars{position:absolute;bottom:calc(76px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:2px;align-items:center;z-index:18;}
+.statbar{display:flex;gap:1px;font-size:15px;text-shadow:1px 1px 1px #000;letter-spacing:1px;}
 #mobile-inv-dots{width:44px;height:44px;background:rgba(255,255,255,0.15);border:2px solid rgba(255,255,255,0.4);border-radius:6px;color:#fff;font-size:20px;display:none;align-items:center;justify-content:center;pointer-events:all;margin-left:4px;letter-spacing:1px;}
 body.mobile-mode #mobile-inv-dots{display:flex;}
 #mobile-chat-btn{width:44px;height:44px;background:rgba(255,255,255,0.15);border:2px solid rgba(255,255,255,0.4);border-radius:6px;color:#fff;font-size:16px;font-weight:bold;display:none;align-items:center;justify-content:center;pointer-events:all;margin-left:4px;}
@@ -113,11 +115,14 @@ body.mobile-mode #mobile-chat-btn{display:flex;}
 #lobby-status{color:#aaa;font-size:10px;text-align:center;margin-top:4px;}
 /* Chat */
 #chat-panel{position:fixed;bottom:80px;left:10px;width:280px;z-index:20;pointer-events:none;}
+#chat-close-btn{position:absolute;top:-30px;right:0;width:26px;height:26px;background:rgba(0,0,0,0.65);border:2px solid rgba(255,255,255,0.4);border-radius:50%;color:#fff;font-size:13px;display:none;align-items:center;justify-content:center;pointer-events:all;cursor:pointer;}
 #chat-msgs{max-height:160px;overflow-y:auto;display:flex;flex-direction:column;gap:3px;}
 .chat-entry{background:rgba(0,0,0,0.65);color:#fff;font-size:11px;padding:3px 7px;border-radius:3px;word-break:break-word;animation:fadeIn 0.2s;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
-#chat-input-wrap{display:none;pointer-events:all;margin-top:4px;}
-#chat-input{width:100%;background:rgba(0,0,0,0.85);border:2px solid #7af;color:#fff;padding:5px 8px;font-family:'Courier New',monospace;font-size:12px;border-radius:4px;outline:none;}
+#chat-input-wrap{display:none;pointer-events:all;margin-top:4px;gap:6px;}
+#chat-input{flex:1;background:rgba(0,0,0,0.85);border:2px solid #7af;color:#fff;padding:5px 8px;font-family:'Courier New',monospace;font-size:12px;border-radius:4px;outline:none;}
+#chat-send-btn{width:34px;height:34px;background:#2a5a8a;border:2px solid #7af;border-radius:4px;color:#fff;font-size:16px;display:none;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+body.mobile-mode #chat-send-btn,body.mobile-mode #chat-close-btn{display:flex;}
 /* Name tags (in-game) */
 .nametag{position:absolute;background:rgba(0,0,0,0.6);color:#fff;font-size:11px;padding:2px 6px;border-radius:3px;pointer-events:none;transform:translateX(-50%);white-space:nowrap;font-family:'Courier New',monospace;z-index:20;}
 /* Countdown overlay */
@@ -296,6 +301,11 @@ body.mobile-mode #cross{display:none;}
     <div id="selD"></div>
   </div>
   <div id="modetag">✦ CREATIVE</div>
+  <div id="survbars" style="display:none;">
+    <div id="healthbar" class="statbar"></div>
+    <div id="hungerbar" class="statbar"></div>
+    <div id="breathbar" class="statbar" style="display:none;"></div>
+  </div>
   <div id="weatherinfo"></div>
   <div id="minimap">
     <canvas id="mmcanvas" width="100" height="100" style="width:100px;height:100px;"></canvas>
@@ -382,7 +392,10 @@ body.mobile-mode #cross{display:none;}
       ⛏ Creative Mode
       <div style="font-size:10px;opacity:0.85;font-weight:normal;margin-top:4px;">Unlimited blocks, fly free, build anything</div>
     </button>
-    <div style="margin-top:14px;color:#777;font-size:10px;">More modes coming soon!</div>
+    <button class="mbtn" id="mode-survival-btn" style="width:100%;padding:18px;font-size:15px;margin-top:10px;background:#7a3a2a;border-color:#a85838;color:#fff;">
+      ❤️ Survival Mode
+      <div style="font-size:10px;opacity:0.85;font-weight:normal;margin-top:4px;">Health, hunger, mobs attack, limited inventory</div>
+    </button>
     <button class="mbtn" id="mode-back" style="width:100%;margin-top:14px;background:#333;border-color:#555;color:#aaa;padding:10px;">← Back</button>
   </div>
 </div>
@@ -492,6 +505,10 @@ body.mobile-mode #cross{display:none;}
       <div class="set-lbl">Allow Late Joins<div class="set-sub">Let players join with the room code after the game has started</div></div>
       <div class="switch1" id="set-latejoin-switch"><div class="knob"></div></div>
     </div>
+    <div class="set-row" id="set-pvp-row" style="display:none;">
+      <div class="set-lbl">Allow PVP<div class="set-sub">Players can damage each other (Survival only)</div></div>
+      <div class="switch1" id="set-pvp-switch"><div class="knob"></div></div>
+    </div>
     <button class="mbtn" id="settings-back" style="width:100%;margin-top:16px;background:#333;border-color:#555;color:#aaa;padding:10px;">← Back</button>
   </div>
 </div>
@@ -512,9 +529,11 @@ body.mobile-mode #cross{display:none;}
 
 <!-- ══ IN-GAME CHAT ══ -->
 <div id="chat-panel">
+  <div id="chat-close-btn">✕</div>
   <div id="chat-msgs"></div>
   <div id="chat-input-wrap">
     <input id="chat-input" placeholder="Press Enter to send..." maxlength="120" autocomplete="off">
+    <div id="chat-send-btn">➤</div>
   </div>
 </div>
 
@@ -553,12 +572,30 @@ function saveSettings(){
 }
 let {deviceMode,dominantHand,soundOn} = loadSettings();
 let allowLateJoins = false; // host-only room setting, synced with server (not persisted locally)
+let selectedGameMode = 'creative'; // chosen on the mode-select screen, before hosting
+let gameMode = 'creative'; // the room's ACTUAL mode, set from the server once the game actually starts
+let pvpEnabled = false; // host-only room setting, survival only
+let survSpawnAngle = null, survSpawnDist = null; // shared survival spawn point (from server, same for everyone)
 
 // ══════════════════════════════════════════════════
 // SOUND ENGINE — Web Audio API, no files needed
 // ══════════════════════════════════════════════════
 let audioCtx=null;
 function getAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+// Chat "ding" — deliberately does NOT check soundOn. Chat notifications should always be audible
+// even with sound effects muted, same as how a phone's message tone is separate from game sound.
+function playChatDing(){
+  try{
+    const a=getAudio();
+    [880,1320].forEach((freq,i)=>{
+      const g=a.createGain();const o=a.createOscillator();
+      o.type='sine';o.frequency.setValueAtTime(freq,a.currentTime+i*0.07);
+      g.gain.setValueAtTime(0.16,a.currentTime+i*0.07);
+      g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+i*0.07+0.18);
+      o.connect(g);g.connect(a.destination);o.start(a.currentTime+i*0.07);o.stop(a.currentTime+i*0.07+0.18);
+    });
+  }catch(e){}
+}
 function playTone(freq,type,dur,vol=0.18,freqEnd=null){
   if(!soundOn)return;
   try{
@@ -589,6 +626,7 @@ const SFX={
   jump:()=>{playTone(180,'sine',0.12,0.12,320);},
   land:()=>{playNoise(0.09,0.2,200);playTone(90,'sine',0.08,0.1);},
   hit:()=>{playNoise(0.06,0.22,1200);playTone(300,'square',0.06,0.1,150);},
+  eat:()=>{for(let i=0;i<3;i++)setTimeout(()=>playNoise(0.07,0.15,600),i*90);},
   die:()=>{playTone(200,'sawtooth',0.35,0.18,60);playNoise(0.3,0.12,100);},
   doorOpen:()=>{playTone(350,'square',0.08,0.1,220);playTone(280,'square',0.06,0.08,180);},
   doorClose:()=>{playTone(220,'square',0.08,0.1,350);playTone(180,'square',0.06,0.08,280);},
@@ -1903,39 +1941,39 @@ const ITEM_CATEGORIES = {
   ],
   'Plants': [
     {id:190,label:'Cactus',color:'#2a7a1a',placeable:true},
-    {id:191,label:'Tall Grass',color:'#5a9e2f',placeable:false},
-    {id:192,label:'Fern',color:'#3a7a22',placeable:false},
-    {id:193,label:'Dead Bush',color:'#8B6914',placeable:false},
-    {id:194,label:'Rose',color:'#cc2244',placeable:false},
-    {id:195,label:'Dandelion',color:'#ffee00',placeable:false},
-    {id:196,label:'Poppy',color:'#cc2222',placeable:false},
-    {id:197,label:'Cornflower',color:'#4466ff',placeable:false},
-    {id:198,label:'Allium',color:'#aa44cc',placeable:false},
-    {id:199,label:'Blue Orchid',color:'#2266cc',placeable:false},
-    {id:200,label:'Mushroom (Red)',color:'#cc2222',placeable:false},
-    {id:201,label:'Mushroom (Brown)',color:'#8B6914',placeable:false},
-    {id:202,label:'Lily Pad',color:'#228833',placeable:false},
-    {id:203,label:'Vine',color:'#2a6a1a',placeable:false},
-    {id:204,label:'Ladder',color:'#c8a048',placeable:false},
+    {id:191,label:'Tall Grass',color:'#5a9e2f',placeable:true},
+    {id:192,label:'Fern',color:'#3a7a22',placeable:true},
+    {id:193,label:'Dead Bush',color:'#8B6914',placeable:true},
+    {id:194,label:'Rose',color:'#cc2244',placeable:true},
+    {id:195,label:'Dandelion',color:'#ffee00',placeable:true},
+    {id:196,label:'Poppy',color:'#cc2222',placeable:true},
+    {id:197,label:'Cornflower',color:'#4466ff',placeable:true},
+    {id:198,label:'Allium',color:'#aa44cc',placeable:true},
+    {id:199,label:'Blue Orchid',color:'#2266cc',placeable:true},
+    {id:200,label:'Mushroom (Red)',color:'#cc2222',placeable:true},
+    {id:201,label:'Mushroom (Brown)',color:'#8B6914',placeable:true},
+    {id:202,label:'Lily Pad',color:'#228833',placeable:true},
+    {id:203,label:'Vine',color:'#2a6a1a',placeable:true},
+    {id:204,label:'Ladder',color:'#c8a048',placeable:true,transparent:true},
     {id:205,label:'Torch',color:'#ffcc44',placeable:true,light:15},
-    {id:206,label:'Lantern',color:'#ffcc44',placeable:false,light:15},
-    {id:207,label:'Campfire',color:'#ff8822',placeable:false,light:15},
-    {id:208,label:'Snow Layer',color:'#eef5ff',placeable:false},
+    {id:206,label:'Lantern',color:'#ffcc44',placeable:true,light:15},
+    {id:207,label:'Campfire',color:'#ff8822',placeable:true,light:15},
+    {id:208,label:'Snow Layer',color:'#eef5ff',placeable:true},
     {id:209,label:'Water',color:'#2266cc',placeable:true,transparent:true},
   ],
   'Functional': [
     {id:210,label:'Iron Door',color:'#ccc',placeable:true},
     {id:211,label:'Oak Door',color:'#c8a048',placeable:true},
-    {id:212,label:'Iron Bars',color:'#aaa',placeable:false},
-    {id:213,label:'Glass Pane',color:'#aaddff',placeable:false,transparent:true},
-    {id:214,label:'Fence',color:'#c8a048',placeable:false},
-    {id:215,label:'Fence Gate',color:'#c8a048',placeable:false},
-    {id:216,label:'Painting',color:'#c8a048',placeable:false},
-    {id:217,label:'Item Frame',color:'#c8a048',placeable:false},
-    {id:218,label:'Armor Stand',color:'#888',placeable:false},
+    {id:212,label:'Iron Bars',color:'#aaa',placeable:true},
+    {id:213,label:'Glass Pane',color:'#aaddff',placeable:true,transparent:true},
+    {id:214,label:'Fence',color:'#c8a048',placeable:true},
+    {id:215,label:'Fence Gate',color:'#c8a048',placeable:true},
+    {id:216,label:'Painting',color:'#c8a048',placeable:true},
+    {id:217,label:'Item Frame',color:'#c8a048',placeable:true},
+    {id:218,label:'Armor Stand',color:'#888',placeable:true},
     // Decor-only blocks (village furniture — indestructible)
     {id:219,label:'Bed (Red)',color:'#cc3333',placeable:true,decor:true},
-    {id:220,label:'Hay Bale (Decor)',color:'#ddbb33',placeable:false,decor:true},
+    {id:220,label:'Hay Bale (Decor)',color:'#ddbb33',placeable:true,decor:true},
   ],
   'Tools': [
     {id:300,label:'Wooden Sword',color:'#c8a048',placeable:false,damage:2},
@@ -1978,21 +2016,21 @@ const ITEM_CATEGORIES = {
     {id:347,label:'Elytra',color:'#aaccee',placeable:false},
   ],
   'Food': [
-    {id:350,label:'Apple',color:'#cc2222',placeable:false},
-    {id:351,label:'Golden Apple',color:'#ffdd00',placeable:false},
-    {id:352,label:'Bread',color:'#cc9944',placeable:false},
-    {id:353,label:'Cookie',color:'#aa7733',placeable:false},
-    {id:354,label:'Pumpkin Pie',color:'#dd8833',placeable:false},
-    {id:355,label:'Cooked Beef',color:'#882211',placeable:false},
-    {id:356,label:'Cooked Pork',color:'#cc7755',placeable:false},
-    {id:357,label:'Cooked Chicken',color:'#ddaa66',placeable:false},
-    {id:358,label:'Carrot',color:'#ff8833',placeable:false},
-    {id:359,label:'Potato',color:'#ccaa66',placeable:false},
-    {id:360,label:'Honey Bottle',color:'#ffaa00',placeable:false},
-    {id:361,label:'Melon Slice',color:'#cc4422',placeable:false},
-    {id:362,label:'Sweet Berries',color:'#cc2244',placeable:false},
-    {id:363,label:'Cake',color:'#fff',placeable:false},
-    {id:364,label:'Cookie',color:'#aa7733',placeable:false},
+    {id:350,label:'Apple',color:'#cc2222',placeable:false,food:true,hunger:4},
+    {id:351,label:'Golden Apple',color:'#ffdd00',placeable:false,food:true,hunger:4,healBonus:4},
+    {id:352,label:'Bread',color:'#cc9944',placeable:false,food:true,hunger:5},
+    {id:353,label:'Cookie',color:'#aa7733',placeable:false,food:true,hunger:2},
+    {id:354,label:'Pumpkin Pie',color:'#dd8833',placeable:false,food:true,hunger:8},
+    {id:355,label:'Cooked Beef',color:'#882211',placeable:false,food:true,hunger:8},
+    {id:356,label:'Cooked Pork',color:'#cc7755',placeable:false,food:true,hunger:8},
+    {id:357,label:'Cooked Chicken',color:'#ddaa66',placeable:false,food:true,hunger:6},
+    {id:358,label:'Carrot',color:'#ff8833',placeable:false,food:true,hunger:3},
+    {id:359,label:'Potato',color:'#ccaa66',placeable:false,food:true,hunger:1},
+    {id:360,label:'Honey Bottle',color:'#ffaa00',placeable:false,food:true,hunger:6},
+    {id:361,label:'Melon Slice',color:'#cc4422',placeable:false,food:true,hunger:2},
+    {id:362,label:'Sweet Berries',color:'#cc2244',placeable:false,food:true,hunger:2},
+    {id:363,label:'Cake',color:'#fff',placeable:false,food:true,hunger:6},
+    {id:364,label:'Cookie',color:'#aa7733',placeable:false,food:true,hunger:2},
   ],
   'Misc': [
     {id:370,label:'Bone',color:'#eeeedd',placeable:false},
@@ -2702,13 +2740,26 @@ function buildChunk(cx,cz){
   }
   const meshes=[];
   const dummy=new THREE.Object3D();
+  // Plants/flowers/mushrooms don't take up a full block in real Minecraft either — scale them
+  // down and sit them on the ground instead of rendering as a full painted cube.
+  const SMALL_ITEM_SCALE={191:0.5,192:0.5,193:0.5,194:0.4,195:0.4,196:0.4,197:0.4,198:0.4,199:0.4,200:0.45,201:0.45,202:0.15,203:0.5};
   // Instanced mesh per block type — 1 draw call each
   byType.forEach((pos,bid)=>{
     const mat=getThreeMat(bid);
     if(!mat)return;
+    const scl=SMALL_ITEM_SCALE[bid];
     const m=new THREE.InstancedMesh(BOX_GEO,mat,pos.length);
     m.castShadow=false;m.receiveShadow=false;// shadows off for perf
-    pos.forEach(([x,y,z],i)=>{dummy.position.set(x+0.5,y+0.5,z+0.5);dummy.updateMatrix();m.setMatrixAt(i,dummy.matrix);});
+    pos.forEach(([x,y,z],i)=>{
+      if(scl){
+        dummy.position.set(x+0.5,y+scl*0.5,z+0.5);// bottom-aligned so it sits on the ground, not floating/sunk
+        dummy.scale.set(scl,scl,scl);
+      } else {
+        dummy.position.set(x+0.5,y+0.5,z+0.5);
+        dummy.scale.set(1,1,1);
+      }
+      dummy.updateMatrix();m.setMatrixAt(i,dummy.matrix);
+    });
     m.instanceMatrix.needsUpdate=true;
     scene.add(m);meshes.push(m);
   });
@@ -2743,15 +2794,26 @@ function updateChunks(px,pz){
 // ══════════════════════════════════════════════════
 // PLAYER
 // ══════════════════════════════════════════════════
-const player={pos:new THREE.Vector3(8,30,8),vel:new THREE.Vector3(),yaw:0,pitch:0,onGround:false,flying:false,lastSpace:0,height:1.75,selectedId:1};
+const player={pos:new THREE.Vector3(8,30,8),vel:new THREE.Vector3(),yaw:0,pitch:0,onGround:false,flying:false,lastSpace:0,height:1.75,selectedId:1,
+  health:20,maxHealth:20,hunger:20,maxHunger:20,waterBreath:20,maxWaterBreath:20,
+  dead:false,respawnPos:null,hungerTimer:0,damageTimer:0,regenTimer:0};
 function findSpawn(){
+  // Creative: always search from a fixed origin — since everyone shares the same seed, every
+  // player's search finds the exact same first valid spot, so it's already a shared spawn.
+  // Survival: the server picked one random point for the whole room (so it isn't always right
+  // at the world origin) — search from THAT shared point instead.
+  let originX=8,originZ=8;
+  if(gameMode==='survival'&&typeof survSpawnAngle==='number'){
+    originX=Math.round(Math.cos(survSpawnAngle)*survSpawnDist);
+    originZ=Math.round(Math.sin(survSpawnAngle)*survSpawnDist);
+  }
   // Search expanding spiral for a solid land tile above sea level
   // Also avoid spawning inside a village house (check for solid block overhead = roof)
   for(let r=0;r<=80;r+=4){
     for(let dx=-r;dx<=r;dx+=4){
       for(let dz=-r;dz<=r;dz+=4){
         if(Math.abs(dx)!==r&&Math.abs(dz)!==r)continue;
-        const wx=8+dx,wz=8+dz;
+        const wx=originX+dx,wz=originZ+dz;
         const s=world.getSurface(wx,wz);
         if(s<=SL+1||s>=WH-4)continue;
         // Reject if there's a solid block 1-5 blocks above surface = inside a house
@@ -2763,7 +2825,7 @@ function findSpawn(){
       }
     }
   }
-  player.pos.set(8.5,40,8.5);
+  player.pos.set(originX+0.5,40,originZ+0.5);
 }
 
 // ══════════════════════════════════════════════════
@@ -2805,7 +2867,190 @@ function raycast(maxD=7){
 let brkCd=0,plcCd=0;
 // Decor block IDs — village furniture, indestructible
 const DECOR_IDS=new Set([98,99,100,219]);
+// ══════════════════════════════════════════════════
+// SURVIVAL: limited inventory, block hardness, tools, item drops
+// Everything here is inert/unused in Creative mode — Creative keeps its original
+// unlimited-instant-everything behavior completely untouched.
+// ══════════════════════════════════════════════════
+let survInv=new Array(36).fill(null);// slot -> {id,count} or null. Slots 0-8 = hotbar.
+function survFindStack(id){for(let i=0;i<36;i++){if(survInv[i]&&survInv[i].id===id&&survInv[i].count<64)return i;}return -1;}
+function survFindEmpty(){for(let i=0;i<36;i++){if(!survInv[i])return i;}return -1;}
+function survAddItem(id,count=1){
+  let remaining=count;
+  while(remaining>0){
+    let idx=survFindStack(id);
+    if(idx===-1)idx=survFindEmpty();
+    if(idx===-1)return count-remaining;// inventory full — whatever we already fit
+    if(!survInv[idx])survInv[idx]={id,count:0};
+    const room=64-survInv[idx].count;
+    const add=Math.min(room,remaining);
+    survInv[idx].count+=add;
+    remaining-=add;
+  }
+  syncSurvivalHotbarUI();
+  return count;
+}
+function survCountItem(id){let n=0;for(const s of survInv)if(s&&s.id===id)n+=s.count;return n;}
+function survRemoveItem(id,count=1){
+  let remaining=count;
+  for(let i=0;i<36&&remaining>0;i++){
+    if(survInv[i]&&survInv[i].id===id){
+      const take=Math.min(survInv[i].count,remaining);
+      survInv[i].count-=take;remaining-=take;
+      if(survInv[i].count<=0)survInv[i]=null;
+    }
+  }
+  syncSurvivalHotbarUI();
+  return count-remaining;
+}
+function syncSurvivalHotbarUI(){
+  if(gameMode!=='survival')return;
+  const cur=survInv[hotbarIdx];
+  player.selectedId=cur?cur.id:0;
+  buildHotbarUI();
+}
+
+// Block hardness (seconds to break bare-handed) and which tool category speeds it up.
+const STONE_FAMILY=new Set([6,7,8,12,13,63,64,65,66,67,68,69,70,71,72,73,74,75,76,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139]);
+const WOOD_FAMILY=new Set([50,51,52,53,54,55,56,57,58,59,60,61,150,151,152,153,154,155,156,157,158,159,160,161]);
+function getBlockHardness(id){
+  if(id===12)return Infinity;// bedrock
+  if(id>=191&&id<=203)return 0.1;// plants/flowers/mushrooms/vines
+  if(id===205||id===208)return 0.1;// torch, snow layer
+  if(STONE_FAMILY.has(id))return 1.4;
+  if(WOOD_FAMILY.has(id))return 0.9;
+  if([2,3,9,10,11,140,141,142,143,144,145,146,147,148,149].includes(id))return 0.5;// dirt/sand/gravel/wool
+  return 0.7;
+}
+const PICKAXE_IDS=new Set([309,310,420,421,422,423]);
+const AXE_IDS=new Set([306,307,308,424,425]);
+function getToolMultiplier(toolId,blockId){
+  if(PICKAXE_IDS.has(toolId)&&STONE_FAMILY.has(blockId))return 4;
+  if(AXE_IDS.has(toolId)&&WOOD_FAMILY.has(blockId))return 4;
+  return 1;
+}
+
+// Item drops — physical entities you walk over to collect, real-Minecraft style.
+const itemDrops=[];// {mesh,itemId,vel,life}
+function spawnItemDrop(x,y,z,id){
+  const item=ITEM_BY_ID[id];if(!item)return;
+  const mat=getThreeMat(id)||new THREE.MeshLambertMaterial({color:item.color||'#888'});
+  const mesh=new THREE.Mesh(new THREE.BoxGeometry(0.28,0.28,0.28),Array.isArray(mat)?mat[0]:mat);
+  mesh.position.set(x+0.5+(Math.random()-0.5)*0.3,y+0.5,z+0.5+(Math.random()-0.5)*0.3);
+  scene.add(mesh);
+  itemDrops.push({mesh,itemId:id,vel:new THREE.Vector3((Math.random()-0.5)*1.5,4,(Math.random()-0.5)*1.5),life:120,spin:Math.random()*Math.PI});
+}
+function updateItemDrops(dt){
+  for(let i=itemDrops.length-1;i>=0;i--){
+    const d=itemDrops[i];
+    d.life-=dt;
+    d.vel.y-=20*dt;
+    const nx=d.mesh.position.x+d.vel.x*dt,ny=d.mesh.position.y+d.vel.y*dt,nz=d.mesh.position.z+d.vel.z*dt;
+    if(solidAt(nx,ny,nz)){d.vel.set(0,0,0);}
+    else{d.mesh.position.set(nx,ny,nz);}
+    d.spin+=dt*2;d.mesh.rotation.y=d.spin;
+    d.mesh.position.y+=Math.sin(performance.now()/300+d.spin)*0.002;// gentle bob
+    if(d.mesh.position.distanceTo(player.pos)<1.4){
+      survAddItem(d.itemId,1);
+      SFX.place&&SFX.place();
+      scene.remove(d.mesh);
+      itemDrops.splice(i,1);
+      continue;
+    }
+    if(d.life<=0){scene.remove(d.mesh);itemDrops.splice(i,1);}
+  }
+}
+
+// ══════════════════════════════════════════════════
+// SURVIVAL STATS — health, hunger, water breath, death & respawn
+// All inert in Creative mode.
+// ══════════════════════════════════════════════════
+let spectating=false,spectateTimer=0;
+function updateSurvivalStats(dt){
+  if(gameMode!=='survival')return;
+  document.getElementById('survbars').style.display='flex';
+  if(spectating){
+    spectateTimer-=dt;
+    if(spectateTimer<=0)respawnPlayer();
+    updateSurvivalHUD();
+    return;
+  }
+  // Hunger drains slowly over time
+  player.hungerTimer+=dt;
+  if(player.hungerTimer>25){// lose 1 hunger roughly every 25s of active play
+    player.hungerTimer=0;
+    if(player.hunger>0)player.hunger=Math.max(0,player.hunger-1);
+  }
+  // Starving damage
+  if(player.hunger<=0){
+    player.damageTimer+=dt;
+    if(player.damageTimer>4){player.damageTimer=0;damagePlayer(1,'hunger');}
+  } else {
+    player.damageTimer=0;
+    // Slow natural regen when hunger is high, like real Minecraft
+    if(player.hunger>=18&&player.health<player.maxHealth){
+      player.regenTimer+=dt;
+      if(player.regenTimer>4){player.regenTimer=0;player.health=Math.min(player.maxHealth,player.health+1);}
+    }
+  }
+  // Water breath — drains while your head/camera is submerged
+  const headBlock=world.getBlock(Math.floor(player.pos.x),Math.floor(player.pos.y),Math.floor(player.pos.z));
+  const submerged=headBlock===209;// Water block id
+  document.getElementById('breathbar').style.display=submerged||player.waterBreath<player.maxWaterBreath?'flex':'none';
+  if(submerged){
+    player.waterBreath=Math.max(0,player.waterBreath-dt*1.1);
+    if(player.waterBreath<=0){
+      player.damageTimer2=(player.damageTimer2||0)+dt;
+      if(player.damageTimer2>2){player.damageTimer2=0;damagePlayer(2,'drowning');}
+    }
+  } else {
+    player.waterBreath=Math.min(player.maxWaterBreath,player.waterBreath+dt*3);
+    player.damageTimer2=0;
+  }
+  updateSurvivalHUD();
+}
+function damagePlayer(amount,source){
+  if(gameMode!=='survival'||spectating||player.dead)return;
+  player.health=Math.max(0,player.health-amount);
+  const hf=document.getElementById('hitflash');
+  hf.style.opacity='0.5';setTimeout(()=>{hf.style.opacity='0';},150);
+  SFX.hit&&SFX.hit();
+  if(player.health<=0)killPlayer(source);
+  updateSurvivalHUD();
+}
+function killPlayer(source){
+  if(spectating)return;
+  spectating=true;spectateTimer=30;player.dead=true;
+  showMsg('💀 You died'+(source?' ('+source+')':''));
+  document.getElementById('darkoverlay').style.opacity='0.6';
+}
+function respawnPlayer(){
+  spectating=false;player.dead=false;spectateTimer=0;
+  player.health=player.maxHealth;player.hunger=player.maxHunger;player.waterBreath=player.maxWaterBreath;
+  player.vel.set(0,0,0);
+  survInv=new Array(36).fill(null);// empty inventory on respawn, per spec
+  hotbarIdx=0;syncSurvivalHotbarUI();
+  document.getElementById('darkoverlay').style.opacity='0';
+  if(player.respawnPos){player.pos.set(player.respawnPos.x,player.respawnPos.y,player.respawnPos.z);}
+  else{findSpawn();}
+  showMsg('❤️ Respawned');
+}
+function updateSurvivalHUD(){
+  const hb=document.getElementById('healthbar'),hg=document.getElementById('hungerbar');
+  let h='';for(let i=0;i<10;i++)h+=(i<Math.ceil(player.health/2)?'❤️':'🖤');
+  hb.textContent=h;
+  let g='';for(let i=0;i<10;i++)g+=(i<Math.ceil(player.hunger/2)?'🍗':'⬛');
+  hg.textContent=g;
+  const bb=document.getElementById('breathbar');
+  let b='';const bubbles=Math.ceil(player.waterBreath/2);
+  for(let i=0;i<10;i++)b+=(i<bubbles?'🫧':'');
+  bb.textContent=b;
+}
 function breakBlock(){
+  if(gameMode==='survival'){
+    // Progressive mining — handled every frame in updateBreaking() below, not here.
+    return;
+  }
   if(brkCd>0)return;
   const h=raycast();if(!h)return;
   if(h.block===12)return;
@@ -2815,10 +3060,29 @@ function breakBlock(){
   SFX.break();
   brkCd=0.15;
 }
+function updateBreaking(dt){
+  if(gameMode!=='survival'){breakProgress=0;breakTargetKey=null;return;}
+  if(!mHeld.l){breakProgress=0;breakTargetKey=null;return;}
+  const h=raycast();
+  if(!h||h.block===12||DECOR_IDS.has(h.block)){breakProgress=0;breakTargetKey=null;return;}
+  const key=h.x+','+h.y+','+h.z;
+  if(key!==breakTargetKey){breakTargetKey=key;breakProgress=0;}
+  const hardness=getBlockHardness(h.block);
+  const mult=getToolMultiplier(player.selectedId,h.block);
+  breakProgress+=dt*mult/hardness;
+  if(breakProgress>=1){
+    world.setBlock(h.x,h.y,h.z,0);
+    rebuildAround(h.x,h.y,h.z);
+    spawnItemDrop(h.x,h.y,h.z,h.block);
+    SFX.break();
+    breakProgress=0;breakTargetKey=null;
+  }
+}
 function placeBlock(){
-  if(plcCd>0)return;
   const item=ITEM_BY_ID[player.selectedId];
   if(!item||!item.placeable)return;
+  if(gameMode==='survival'&&survCountItem(player.selectedId)<=0)return;// don't have it
+  if(plcCd>0)return;
   const h=raycast();if(!h)return;
   const {nx,ny,nz}=h;
   const px=Math.floor(player.pos.x),py1=Math.floor(player.pos.y-player.height),py2=Math.floor(player.pos.y),pz=Math.floor(player.pos.z);
@@ -2827,6 +3091,7 @@ function placeBlock(){
   rebuildAround(nx,ny,nz);
   SFX.place();
   plcCd=0.15;
+  if(gameMode==='survival'){survRemoveItem(player.selectedId,1);}
 }
 
 // Block highlight
@@ -2847,6 +3112,7 @@ function updateLighting(){
 // ══════════════════════════════════════════════════
 function startFlying(){
   if(player.flying)return;
+  if(gameMode==='survival'){showMsg("🚫 Can't fly in Survival");return;}
   player.flying=true;
   player.vel.y=0;
   showMsg('✈ Flying ON');
@@ -2897,7 +3163,7 @@ document.addEventListener('keydown',e=>{
   }
   // Flappy Bird flap while in lobby
   if(e.code==='Space'&&!started&&window._flap){e.preventDefault();window._flap();}
-  const n=parseInt(e.key);if(n>=1&&n<=9){hotbarIdx=n-1;player.selectedId=hotbar[hotbarIdx];updateHotbarUI();}
+  const n=parseInt(e.key);if(n>=1&&n<=9){hotbarIdx=n-1;if(gameMode==='survival')syncSurvivalHotbarUI();else{player.selectedId=hotbar[hotbarIdx];updateHotbarUI();}}
 });
 document.addEventListener('keyup',e=>{
   keys[e.code]=false;
@@ -2919,11 +3185,25 @@ document.addEventListener('mousemove',e=>{
   player.pitch=Math.max(-Math.PI/2+0.01,Math.min(Math.PI/2-0.01,player.pitch-e.movementY*0.002));
 });
 let mHeld={l:false,r:false};
+function tryEatFood(){
+  if(gameMode!=='survival')return false;
+  const item=ITEM_BY_ID[player.selectedId];
+  if(!item||!item.food)return false;
+  if(player.hunger>=player.maxHunger&&!item.healBonus)return false;// don't waste it if already full
+  if(survCountItem(player.selectedId)<=0)return false;
+  survRemoveItem(player.selectedId,1);
+  player.hunger=Math.min(player.maxHunger,player.hunger+item.hunger);
+  if(item.healBonus)player.health=Math.min(player.maxHealth,player.health+item.healBonus);
+  SFX.eat&&SFX.eat();
+  showMsg('🍗 Ate '+item.label);
+  return true;
+}
 canvas2.addEventListener('mousedown',e=>{
   if(!locked)return;
   if(e.button===0){mHeld.l=true;performAttack();}
   if(e.button===2){
     mHeld.r=true;
+    if(tryEatFood())return;
     if(tryUseVillager())return;
     if(tryUseTNT())return;
     if(tryThrowEnderPearl())return;
@@ -2983,17 +3263,28 @@ function updatePhysics(dt){
       player.vel.y=0;
     }
   }else{
+    // Ladder: if you're overlapping a ladder block, climbing works instead of gravity —
+    // hold forward/Space to go up, Shift to go down, let go to hold your grip in place.
+    const onLadder=world.getBlock(Math.floor(player.pos.x),Math.floor(player.pos.y),Math.floor(player.pos.z))===204
+      ||world.getBlock(Math.floor(player.pos.x),Math.floor(player.pos.y-1),Math.floor(player.pos.z))===204;
     player.vel.x=mv.x*SPEED;
     player.vel.z=mv.z*SPEED;
-    player.vel.y-=GRAV*dt;
-    if(keys['Space']&&player.onGround){player.vel.y=JUMP;player.onGround=false;SFX.jump();}
+    if(onLadder){
+      if(keys['Space']||mv.z>0.2)player.vel.y=3;
+      else if(keys['ShiftLeft']||keys['ShiftRight'])player.vel.y=-3;
+      else player.vel.y=0;
+      player.onGround=false;
+    } else {
+      player.vel.y-=GRAV*dt;
+      if(keys['Space']&&player.onGround){player.vel.y=JUMP;player.onGround=false;SFX.jump();}
+    }
     player.pos.x+=player.vel.x*dt;
     if(pCols(player.pos.x,player.pos.y,player.pos.z)||fSolid(player.pos.x,player.pos.y,player.pos.z)){player.pos.x-=player.vel.x*dt;player.vel.x=0;}
     player.pos.z+=player.vel.z*dt;
     if(pCols(player.pos.x,player.pos.y,player.pos.z)||fSolid(player.pos.x,player.pos.y,player.pos.z)){player.pos.z-=player.vel.z*dt;player.vel.z=0;}
     player.pos.y+=player.vel.y*dt;
     player.onGround=false;
-    if(player.vel.y<0&&fSolid(player.pos.x,player.pos.y,player.pos.z)){const gy=Math.floor(player.pos.y-player.height);player.pos.y=gy+player.height+1;if(player.vel.y<-4)SFX.land();player.vel.y=0;player.onGround=true;}
+    if(player.vel.y<0&&fSolid(player.pos.x,player.pos.y,player.pos.z)){const gy=Math.floor(player.pos.y-player.height);player.pos.y=gy+player.height+1;if(player.vel.y<-4&&!onLadder)SFX.land();player.vel.y=0;player.onGround=true;}
     if(player.vel.y>0&&pCols(player.pos.x,player.pos.y,player.pos.z))player.vel.y=0;
     if(player.pos.y<1){player.pos.y=1;player.vel.y=0;player.onGround=true;}
     if(player.pos.y>MAX_Y){player.pos.y=MAX_Y;player.vel.y=0;}
@@ -3261,7 +3552,26 @@ function tryAttackMob(){
 let isDay=true;
 function performAttack(){
   if(RANGED_IDS.has(player.selectedId)){shootArrow();}
-  else{tryAttackMob();tryAttackVillager();breakBlock();}
+  else{tryAttackMob();tryAttackVillager();tryAttackPlayer();breakBlock();}
+}
+let pvpAttackCd=0;
+function tryAttackPlayer(){
+  if(gameMode!=='survival'||!pvpEnabled)return;
+  if(pvpAttackCd>0)return;
+  const dir=new THREE.Vector3(-Math.cos(player.pitch)*Math.sin(player.yaw),Math.sin(player.pitch),-Math.cos(player.pitch)*Math.cos(player.yaw));
+  for(const id in remotePlayers){
+    const rp=remotePlayers[id];
+    const rpPos=new THREE.Vector3(rp.pos.x,rp.pos.y+player.height*0.5,rp.pos.z);
+    const dist=rpPos.distanceTo(player.pos);
+    if(dist>4.5)continue;
+    const toRp=rpPos.clone().sub(player.pos).normalize();
+    if(toRp.dot(dir)>0.82){
+      pvpAttackCd=0.4;
+      SFX.hit();
+      if(socket&&socket.connected)socket.emit('playerAttack',{targetId:id,damage:getSelectedDamage()});
+      return;
+    }
+  }
 }
 const EXPLODE_RADIUS=3.2;
 function explodeAt(cx,cy,cz,r){
@@ -3342,11 +3652,29 @@ function updateMobs(dt){
       }
     }
 
+    // Survival: hostile mobs actually deal damage at night when close enough to hit you.
+    if(gameMode==='survival'&&mob.type.hostile&&!isDay&&distToPlayer<1.7&&mob.type.name!=='Creeper'){
+      if(mob.attackCd===undefined)mob.attackCd=0;
+      mob.attackCd-=dt;
+      if(mob.attackCd<=0){
+        mob.attackCd=1.0;
+        damagePlayer(2,mob.type.name.toLowerCase());
+      }
+    }
+
     // Direction for this frame: fleeing > night-follow (hostile) > random wander
     if(mob.avoidTimer===undefined)mob.avoidTimer=0;
+    if(mob.stuckTimer===undefined)mob.stuckTimer=0;
     if(mob.avoidTimer>0)mob.avoidTimer-=dt;
+    if(mob.stuckTimer>0)mob.stuckTimer-=dt;
     if(mob.fleeTimer>0){
       mob.fleeTimer-=dt;
+    } else if(mob.stuckTimer>0){
+      // Genuinely stuck (couldn't find ANY valid direction last time) — stand still and hold a
+      // fixed rotation for a while instead of retrying every fraction of a second. That endless
+      // rapid re-pick of a new (still invalid) direction, with the mesh snapping to face it every
+      // time, was the actual "shaking while staying still" bug — the mob's position genuinely
+      // wasn't moving, but its rotation was flickering constantly.
     } else if(!isDay && mob.type.hostile && distToPlayer<18 && mob.avoidTimer<=0){
       // Hostile mobs sense and follow you at night — no damage, just pressure/atmosphere.
       mob.wanderDir=Math.atan2(player.pos.x-mob.mesh.position.x,player.pos.z-mob.mesh.position.z);
@@ -3371,7 +3699,9 @@ function updateMobs(dt){
       const w=mobBlockedAt(Math.floor(sx),Math.floor(sz),Math.round(mob.mesh.position.y-0.5));
       return surf>SL+1&&!w;
     }
-    if(checkAngle(mob.wanderDir)){
+    if(mob.stuckTimer>0){
+      // Idle — don't move, don't touch wanderDir, no rotation flicker.
+    } else if(checkAngle(mob.wanderDir)){
       mob.mesh.position.x+=Math.sin(mob.wanderDir)*mob.type.speed*dt;
       mob.mesh.position.z+=Math.cos(mob.wanderDir)*mob.type.speed*dt;
       moving=true;
@@ -3380,16 +3710,20 @@ function updateMobs(dt){
       // reversal) so a mob actually has a real chance of routing around a corner instead of
       // endlessly bouncing straight back the way it came, then commit to whichever works for a
       // while (avoidTimer) so night-follow doesn't immediately re-aim it right back into the
-      // same wall next frame — that immediate re-aim was what caused the visible shaking/vibrating.
+      // same wall next frame.
       const tryOffsets=[0.6,-0.6,1.2,-1.2,2.4,Math.PI];
       let found=false;
       for(const off of tryOffsets){
         const cand=mob.wanderDir+off*Math.PI/1.6;
         if(checkAngle(cand)){mob.wanderDir=cand;found=true;break;}
       }
-      if(!found)mob.wanderDir+=Math.PI*(0.9+Math.random()*0.2);
-      mob.wanderTimer=0.3+Math.random()*0.4;
-      mob.avoidTimer=1.1;
+      if(found){
+        mob.wanderTimer=0.3+Math.random()*0.4;
+        mob.avoidTimer=1.1;
+      } else {
+        // Truly nowhere to go right now — go idle instead of thrashing through random angles.
+        mob.stuckTimer=2+Math.random()*2;
+      }
     }
 
     // Surface Y update (every 0.35s) — rescue if somehow on water
@@ -3886,16 +4220,27 @@ let hotbarIdx=0;
 
 function buildHotbarUI(){
   const hb=document.getElementById('hotbar');hb.innerHTML='';
-  hotbar.forEach((id,i)=>{
-    const item=ITEM_BY_ID[id]||{label:'?',color:'#888'};
+  for(let i=0;i<9;i++){
+    const survStack=gameMode==='survival'?survInv[i]:null;
+    const id=gameMode==='survival'?(survStack?survStack.id:0):hotbar[i];
+    const item=ITEM_BY_ID[id]||{label:gameMode==='survival'?'':'?',color:'#333'};
     const sl=document.createElement('div');sl.className='hs'+(i===hotbarIdx?' active':'');
     const num=document.createElement('span');num.className='hs-num';num.textContent=i+1;
-    const ic=makeIcon(item,32);
-    const lbl=document.createElement('span');lbl.className='hs-lbl';lbl.textContent=item.label;
-    sl.appendChild(num);sl.appendChild(ic);sl.appendChild(lbl);
-    sl.addEventListener('click',()=>{hotbarIdx=i;player.selectedId=hotbar[i];updateHotbarUI();});
+    sl.appendChild(num);
+    if(id){
+      const ic=makeIcon(item,32);sl.appendChild(ic);
+      const lbl=document.createElement('span');lbl.className='hs-lbl';lbl.textContent=item.label;sl.appendChild(lbl);
+      if(gameMode==='survival'&&survStack&&survStack.count>1){
+        const cnt=document.createElement('span');cnt.className='hs-num';cnt.style.cssText='position:absolute;bottom:1px;right:2px;';cnt.textContent=survStack.count;sl.appendChild(cnt);
+      }
+    }
+    sl.addEventListener('click',()=>{
+      hotbarIdx=i;
+      if(gameMode==='survival')syncSurvivalHotbarUI();
+      else{player.selectedId=hotbar[i];updateHotbarUI();}
+    });
     hb.appendChild(sl);
-  });
+  }
 }
 function updateHotbarUI(){
   document.querySelectorAll('.hs').forEach((s,i)=>{
@@ -3937,6 +4282,46 @@ function buildInvTabs(){
 function renderInv(q){
   const body=document.getElementById('inv-body');body.innerHTML='';
   const ql=q.toLowerCase();
+  if(gameMode==='survival'){
+    // Survival: this panel shows what you actually HAVE, not the full creative catalog —
+    // that's the whole point of a limited inventory. Right-click a food item to eat it.
+    const sec=document.createElement('div');sec.className='inv-sec';
+    const grid=document.createElement('div');grid.className='igrid';
+    let any=false;
+    survInv.forEach((stack,slotIdx)=>{
+      if(!stack)return;
+      const item=ITEM_BY_ID[stack.id];if(!item)return;
+      if(ql&&!item.label.toLowerCase().includes(ql))return;
+      any=true;
+      const sl=document.createElement('div');sl.className='isl'+(hotbarIdx===slotIdx&&slotIdx<9?' sel':'');
+      sl.appendChild(makeIcon(item,36));
+      const cnt=document.createElement('span');cnt.className='hs-num';cnt.style.cssText='position:absolute;bottom:2px;right:4px;';cnt.textContent=stack.count;sl.appendChild(cnt);
+      const tip=document.createElement('div');tip.className='isl-tip';tip.textContent=item.label+(item.food?' (right-click to eat)':'');sl.appendChild(tip);
+      sl.style.position='relative';
+      sl.addEventListener('click',()=>{
+        if(slotIdx<9){hotbarIdx=slotIdx;}
+        else{
+          // Move an owned item from backpack into the current hotbar slot for quick access
+          const tmp=survInv[hotbarIdx];survInv[hotbarIdx]=survInv[slotIdx];survInv[slotIdx]=tmp;
+        }
+        syncSurvivalHotbarUI();renderInv(q);
+      });
+      sl.addEventListener('contextmenu',(e)=>{
+        e.preventDefault();
+        if(item.food){
+          survRemoveItem(item.id,1);
+          player.hunger=Math.min(player.maxHunger,player.hunger+item.hunger);
+          if(item.healBonus)player.health=Math.min(player.maxHealth,player.health+item.healBonus);
+          SFX.eat&&SFX.eat();
+          renderInv(q);
+        }
+      });
+      grid.appendChild(sl);
+    });
+    if(!any){const p=document.createElement('p');p.className='inv-hint';p.textContent='Your inventory is empty. Break blocks and kill mobs to collect items.';grid.appendChild(p);}
+    sec.appendChild(grid);body.appendChild(sec);
+    return;
+  }
   const cats=invCat==='All'?Object.entries(ITEM_CATEGORIES):[[invCat,ITEM_CATEGORIES[invCat]||[]]];
   cats.forEach(([cat,items])=>{
     const filtered=items.filter(it=>!it.hidden&&(!ql||it.label.toLowerCase().includes(ql)));
@@ -4071,7 +4456,12 @@ function renderCraftGrid(){
       el.appendChild(makeIcon(itemOrFallback(slot),32));
       if(slot.count>1){const c=document.createElement('span');c.className='cnt';c.textContent=slot.count;el.appendChild(c);}
     }
-    el.addEventListener('click',()=>{craftGrid[i]=null;renderCraftGrid();});
+    el.addEventListener('click',()=>{
+      // Give the ingredient back to your inventory in Survival — it's not consumed until you
+      // actually hit the output slot to craft.
+      if(gameMode==='survival'&&craftGrid[i])survAddItem(craftGrid[i].id,craftGrid[i].count);
+      craftGrid[i]=null;renderCraftGrid();
+    });
     gridEl.appendChild(el);
   });
   const outEl=document.getElementById('craft-output');outEl.innerHTML='';
@@ -4081,19 +4471,38 @@ function renderCraftGrid(){
     const outItem=ITEM_BY_ID[match.out];
     if(outItem)outEl.appendChild(makeIcon(outItem,36));
     outEl.onclick=()=>{
-      player.selectedId=match.out;hotbar[hotbarIdx]=match.out;buildHotbarUI();
+      if(gameMode==='survival'){
+        // Actually consume the ingredients from the grid now, and hand back any leftover.
+        let remaining={};
+        match.ins.forEach(ing=>remaining[ing.id]=ing.count);
+        for(let i=0;i<craftGrid.length;i++){
+          const s=craftGrid[i];if(!s||!remaining[s.id])continue;
+          const take=Math.min(s.count,remaining[s.id]);
+          s.count-=take;remaining[s.id]-=take;
+          if(s.count<=0)craftGrid[i]=null;
+        }
+        survAddItem(match.out,match.outCount||1);
+      } else {
+        player.selectedId=match.out;hotbar[hotbarIdx]=match.out;buildHotbarUI();
+      }
       showMsg('🔨 Crafted '+match.label);
       SFX.place&&SFX.place();
+      renderCraftGrid();
     };
   } else {
     outEl.onclick=null;
   }
 }
 function addToCraftGrid(item){
-  // Stack onto an existing slot with the same item first, otherwise use the next empty slot.
+  // Survival: only let you add ingredients you actually have, and take them out of your
+  // inventory while they're sitting in the grid (put back if you remove them — see above).
+  if(gameMode==='survival'){
+    if(survCountItem(item.id)<=0)return;
+    if(!survRemoveItem(item.id,1))return;
+  }
   let idx=craftGrid.findIndex(s=>s&&s.id===item.id);
   if(idx===-1)idx=craftGrid.findIndex(s=>!s);
-  if(idx===-1)return;// grid full
+  if(idx===-1){if(gameMode==='survival')survAddItem(item.id,1);return;}// grid full — give it back
   if(craftGrid[idx])craftGrid[idx].count++;
   else craftGrid[idx]={id:item.id,label:item.label,count:1};
   renderCraftGrid();
@@ -4103,16 +4512,20 @@ function renderCraftScreen(q){
   const body=document.getElementById('craft-palette');body.innerHTML='';
   const ql=(q||'').toLowerCase();
   // Palette = every distinct ingredient used across all recipes, so you're picking from
-  // exactly what's actually craftable, not the entire item catalog.
+  // exactly what's actually craftable, not the entire item catalog. In Survival, only items
+  // you actually own show up here (with how many you have).
   const seen=new Set();
   RECIPES.forEach(r=>r.ins.forEach(ing=>seen.add(ing.id)));
-  [...seen].map(id=>ITEM_BY_ID[id]).filter(it=>it&&(!ql||it.label.toLowerCase().includes(ql))).forEach(item=>{
+  let candidates=[...seen].map(id=>ITEM_BY_ID[id]).filter(it=>it&&(!ql||it.label.toLowerCase().includes(ql)));
+  if(gameMode==='survival')candidates=candidates.filter(it=>survCountItem(it.id)>0);
+  candidates.forEach(item=>{
     const el=document.createElement('div');el.className='palette-item';
     el.appendChild(makeIcon(item,28));
-    const lbl=document.createElement('div');lbl.textContent=item.label;el.appendChild(lbl);
+    const lbl=document.createElement('div');lbl.textContent=item.label+(gameMode==='survival'?' ('+survCountItem(item.id)+')':'');el.appendChild(lbl);
     el.addEventListener('click',()=>addToCraftGrid(item));
     body.appendChild(el);
   });
+  if(gameMode==='survival'&&!candidates.length){const p=document.createElement('p');p.className='inv-hint';p.textContent='Collect ingredients first — nothing craftable in your inventory yet.';body.appendChild(p);}
 }
 document.getElementById('craft-srch').addEventListener('input',e=>renderCraftScreen(e.target.value));
 
@@ -4129,15 +4542,27 @@ function openTradeScreen(villager){
     const row=document.createElement('div');row.className='trade-offer';
     const give=document.createElement('div');give.className='trade-give';
     give.appendChild(makeIcon(itemOrFallback(t.give),24));
-    const giveTxt=document.createElement('span');giveTxt.textContent='Give '+t.give.count+'x '+t.give.label;give.appendChild(giveTxt);
+    const giveTxt=document.createElement('span');
+    const have=gameMode==='survival'?survCountItem(t.give.id):Infinity;
+    giveTxt.textContent='Give '+t.give.count+'x '+t.give.label+(gameMode==='survival'?' (have '+have+')':'');
+    give.appendChild(giveTxt);
     const arrow=document.createElement('div');arrow.className='recipe-arrow';arrow.textContent='→';
     const get=document.createElement('div');get.className='trade-get';
     get.appendChild(makeIcon(itemOrFallback(t.get),24));
     const getTxt=document.createElement('span');getTxt.textContent='Get '+t.get.count+'x '+t.get.label;get.appendChild(getTxt);
     const btn=document.createElement('button');btn.className='craft-btn';btn.textContent='Trade';
+    const canAfford=gameMode!=='survival'||have>=t.give.count;
+    if(!canAfford){btn.disabled=true;btn.style.opacity='0.4';btn.style.cursor='not-allowed';}
     btn.addEventListener('click',()=>{
+      if(!canAfford)return;
       const outItem=itemOrFallback(t.get);
-      player.selectedId=outItem.id;hotbar[hotbarIdx]=outItem.id;buildHotbarUI();
+      if(gameMode==='survival'){
+        survRemoveItem(t.give.id,t.give.count);
+        survAddItem(outItem.id,t.get.count);
+        openTradeScreen(villager);// refresh affordability
+      } else {
+        player.selectedId=outItem.id;hotbar[hotbarIdx]=outItem.id;buildHotbarUI();
+      }
       showMsg('🤝 Traded for '+t.get.label);
       SFX.place&&SFX.place();
     });
@@ -4258,6 +4683,11 @@ let sleeping=false;
 function tryUseBed(){
   const h=raycast();
   if(!h||h.block!==BED_ID)return;
+  if(gameMode==='survival'){
+    player.respawnPos={x:h.x+0.5,y:h.y+1,z:h.z+0.5};
+    showMsg('🛏 Respawn point set!');
+    return;
+  }
   sleeping=!sleeping;
   showMsg(sleeping?'💤 Time speeding up... (right-click bed to stop)':'☀ Back to normal speed');
 }
@@ -4304,12 +4734,15 @@ function loop(t){
   // several reported bugs turning out to all be the same one error. Isolating each call means a
   // future bug in any one system stays contained to that system, on screen, immediately.
   safeCall('input', () => {
-    brkCd=Math.max(0,brkCd-dt);plcCd=Math.max(0,plcCd-dt);arrowCd=Math.max(0,arrowCd-dt);
+    brkCd=Math.max(0,brkCd-dt);plcCd=Math.max(0,plcCd-dt);arrowCd=Math.max(0,arrowCd-dt);pvpAttackCd=Math.max(0,pvpAttackCd-dt);
     if(mHeld.l&&brkCd===0){performAttack();}
     if(mHeld.r&&plcCd===0)placeBlock();
   });
   safeCall('physics', () => updatePhysics(dt));
   safeCall('mobs', () => updateMobs(dt));
+  safeCall('breaking', () => updateBreaking(dt));
+  safeCall('itemdrops', () => updateItemDrops(dt));
+  safeCall('survivalstats', () => updateSurvivalStats(dt));
   safeCall('tnt', () => updatePrimedTNT(dt));
   safeCall('pearls', () => updateEnderPearls(dt));
   safeCall('arrows', () => updateArrows(dt));
@@ -4458,13 +4891,16 @@ function connectSocket() {
 
   // Late join: server sends this instead of joinSuccess+lobby when the game already started
   // and the host has "Allow Late Joins" turned on — skip the lobby entirely.
-  socket.on('joinMidGame', ({ code, seed, epochMs, players }) => {
+  socket.on('joinMidGame', ({ code, seed, epochMs, players, gameMode: gm, pvpEnabled: pvp, survivalSpawnAngle, survivalSpawnDist }) => {
     setConnectingState(false);
     myRoomCode = code;
     isHost = false;
     showScreen(null);
     if (typeof seed === 'number') { world.setSeed(seed); mpSeed = seed; }
     roomEpochMs = typeof epochMs === 'number' ? epochMs : Date.now();
+    gameMode = gm === 'survival' ? 'survival' : 'creative';
+    pvpEnabled = !!pvp;
+    survSpawnAngle = survivalSpawnAngle; survSpawnDist = survivalSpawnDist;
     launchWorldLoad();
     if (players) players.forEach(p => { if (p.id !== myId) buildRemotePlayer(p.id, p.outfit, p.name); });
   });
@@ -4473,6 +4909,14 @@ function connectSocket() {
   socket.on('playerJoined', ({ id, name, outfit }) => {
     if (id !== myId && !remotePlayers[id]) buildRemotePlayer(id, outfit, name);
     showChatMsg(`${name} joined the game`, '#7f7');
+  });
+
+  socket.on('tookDamage', ({ fromName, damage }) => {
+    damagePlayer(damage, fromName || 'another player');
+  });
+  socket.on('pvpEnabledChanged', (enabled) => {
+    pvpEnabled = !!enabled;
+    refreshSettingsUI();
   });
 
   socket.on('lobbyUpdate', (state) => {
@@ -4502,12 +4946,15 @@ function connectSocket() {
     num.style.animation = '';
   });
 
-  socket.on('gameStart', ({ players, seed, epochMs }) => {
+  socket.on('gameStart', ({ players, seed, epochMs, gameMode: gm, pvpEnabled: pvp, survivalSpawnAngle, survivalSpawnDist }) => {
     setTimeout(() => {
       document.getElementById('countdown-overlay').classList.remove('active');
       showScreen(null);
       if (typeof seed === 'number') { world.setSeed(seed); mpSeed = seed; } // same seed for everyone = same world
       roomEpochMs = typeof epochMs === 'number' ? epochMs : Date.now(); // same clock for everyone = same time-of-day & weather
+      gameMode = gm === 'survival' ? 'survival' : 'creative';
+      pvpEnabled = !!pvp;
+      survSpawnAngle = survivalSpawnAngle; survSpawnDist = survivalSpawnDist;
       launchWorldLoad();
       // Build remote player meshes for everyone except ourselves
       if (players) {
@@ -4544,7 +4991,7 @@ function connectSocket() {
 
   socket.on('chatMessage', ({ name, text }) => {
     showChatMsg(`${name}: ${text}`, '#ddd');
-    if (name !== myName) SFX.place && SFX.place();
+    if (name !== myName) { SFX.place && SFX.place(); playChatDing(); }
   });
 
   socket.on('playerLeft', ({ id, name }) => {
@@ -4673,7 +5120,8 @@ function showScreen(id) {
 }
 
 document.getElementById('btn-host').addEventListener('click', () => showScreen('mode-screen'));
-document.getElementById('mode-creative-btn').addEventListener('click', () => showScreen('host-screen'));
+document.getElementById('mode-creative-btn').addEventListener('click', () => { selectedGameMode='creative'; showScreen('host-screen'); });
+document.getElementById('mode-survival-btn').addEventListener('click', () => { selectedGameMode='survival'; showScreen('host-screen'); });
 document.getElementById('mode-back').addEventListener('click', () => showScreen('main-menu'));
 document.getElementById('btn-join').addEventListener('click', () => showScreen('join-screen'));
 document.getElementById('host-back').addEventListener('click', () => showScreen('mode-screen'));
@@ -4715,6 +5163,10 @@ function refreshSettingsUI() {
   document.getElementById('set-sound-switch').classList.toggle('on', soundOn);
   document.getElementById('set-latejoin-row').style.display = isHost ? 'flex' : 'none';
   document.getElementById('set-latejoin-switch').classList.toggle('on', allowLateJoins);
+  const pvpRow = document.getElementById('set-pvp-row');
+  if (pvpRow) pvpRow.style.display = (isHost && gameMode === 'survival') ? 'flex' : 'none';
+  const pvpSwitch = document.getElementById('set-pvp-switch');
+  if (pvpSwitch) pvpSwitch.classList.toggle('on', pvpEnabled);
 }
 document.getElementById('pause-settings').addEventListener('click', () => {
   refreshSettingsUI();
@@ -4752,6 +5204,12 @@ document.getElementById('set-latejoin-switch').addEventListener('click', () => {
   if (!isHost) return;
   allowLateJoins = !allowLateJoins;
   if (socket && socket.connected) socket.emit('setAllowLateJoins', allowLateJoins);
+  refreshSettingsUI();
+});
+document.getElementById('set-pvp-switch').addEventListener('click', () => {
+  if (!isHost || gameMode !== 'survival') return;
+  pvpEnabled = !pvpEnabled;
+  if (socket && socket.connected) socket.emit('setPvpEnabled', pvpEnabled);
   refreshSettingsUI();
 });
 applyDeviceMode(); // apply whatever was loaded from localStorage right away
@@ -4961,8 +5419,8 @@ document.getElementById('host-confirm').addEventListener('click', () => {
   myName = name;
   setConnectingState(true);
   connectSocket();
-  if (socket.connected) { socket.emit('hostGame', { name, outfit: myOutfit }); setConnectingState(false); }
-  else socket.once('connect', () => socket.emit('hostGame', { name, outfit: myOutfit }));
+  if (socket.connected) { socket.emit('hostGame', { name, outfit: myOutfit, gameMode: selectedGameMode }); setConnectingState(false); }
+  else socket.once('connect', () => socket.emit('hostGame', { name, outfit: myOutfit, gameMode: selectedGameMode }));
 });
 
 document.getElementById('join-confirm').addEventListener('click', () => {
@@ -5298,7 +5756,8 @@ function showChatMsg(text, color = '#fff') {
 function openChat() {
   if (!started) return;
   chatOpen = true;
-  chatInputWrap.style.display = 'block';
+  chatInputWrap.style.display = 'flex';
+  document.getElementById('chat-close-btn').style.display='flex';
   chatInput.focus();
   document.exitPointerLock && document.exitPointerLock();
 }
@@ -5306,9 +5765,16 @@ function openChat() {
 function closeChat() {
   chatOpen = false;
   chatInputWrap.style.display = 'none';
+  document.getElementById('chat-close-btn').style.display='none';
   chatInput.value = '';
   if(deviceMode==='computer')canvas2.requestPointerLock();
 }
+document.getElementById('chat-close-btn').addEventListener('click', closeChat);
+document.getElementById('chat-send-btn').addEventListener('click', () => {
+  const text = chatInput.value.trim();
+  if (text && socket && socket.connected) socket.emit('chatMessage', text);
+  closeChat();
+});
 
 chatInput.addEventListener('keydown', (e) => {
   e.stopPropagation();
@@ -5393,6 +5859,9 @@ function launchWorldLoad() {
       setTimeout(() => {
         loadEl.style.display = 'none';
         started = true;
+        document.getElementById('modetag').textContent = gameMode === 'survival' ? '❤️ SURVIVAL' : '✦ CREATIVE';
+        document.getElementById('survbars').style.display = gameMode === 'survival' ? 'flex' : 'none';
+        if (gameMode === 'survival') updateSurvivalHUD();
         buildHotbarUI(); buildInvTabs(); renderInv('');
         lastT = performance.now();
         // Build remote player meshes for everyone in the room
